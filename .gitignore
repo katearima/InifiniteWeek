@@ -1,0 +1,9 @@
+.DS_Store
+._*
+
+.idea/
+*.swp
+*.swo
+*~
+
+/AGENTS.md

@@ -1,0 +1,3 @@
+## Core User Journey
+
+Keti organizes social events for the Number Six Club and creates the club as an approval-only group on InfiniteWeek. Lizi, a club member, requests to join and is approved by Keti. Keti then publishes an upcoming coffee hour for the group. Lizi discovers the event and marks it as `INTERESTED`. Later, after checking her schedule, she changes her response to `GOING`, and the event appears in her personal calendar alongside her other saved events. Keti can see how many members have marked themselves as `GOING` and use that information when preparing for the event. If Keti later updates the event's time or location, Lizi sees the updated details on the event page and in her personal calendar without needing to find the original announcement.

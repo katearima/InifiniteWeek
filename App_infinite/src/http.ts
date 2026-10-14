@@ -1,0 +1,34 @@
+import { httpPolicy } from "@mit-sdg/sync-engine-http/policy";
+
+/** Public categories follow ConceptBox; see LICENSES/ConceptBox.txt. */
+export function infinitePlansPolicy(publicOrigin: string) {
+  return httpPolicy({
+    publicOrigin,
+    basePath: "/api",
+    limits: { requestBodyBytes: 64 * 1024 },
+    publicErrors: {
+      NOT_SIGNED_IN: "UNAUTHORIZED", INVALID_CREDENTIALS: "UNAUTHORIZED",
+      INVALID_USERNAME: "INVALID_REQUEST", INVALID_PASSWORD: "INVALID_REQUEST",
+      USERNAME_TAKEN: "CONFLICT", PASSWORD_SET: "CONFLICT",
+      NOT_FOUND: "NOT_FOUND", NOT_GROUP_MEMBER: "FORBIDDEN",
+      JOIN_GROUP_NOT_FOUND: "NOT_FOUND", JOIN_ALREADY_MEMBER: "CONFLICT", REQUEST_ALREADY_PENDING: "CONFLICT",
+      APPROVE_GROUP_NOT_FOUND: "NOT_FOUND", APPROVE_NOT_MEMBER: "FORBIDDEN", APPROVE_REQUEST_NOT_FOUND: "NOT_FOUND",
+      REJECT_GROUP_NOT_FOUND: "NOT_FOUND", REJECT_NOT_MEMBER: "FORBIDDEN", REJECT_REQUEST_NOT_FOUND: "NOT_FOUND",
+      DELETE_GROUP_NOT_FOUND: "NOT_FOUND", DELETE_NOT_MEMBER: "FORBIDDEN", DELETE_NOT_LAST_MEMBER: "CONFLICT", ACTIVE_EVENTS_PREVENT_DELETION: "CONFLICT",
+      LEAVE_GROUP_NOT_FOUND: "NOT_FOUND", LEAVE_NOT_MEMBER: "FORBIDDEN", ACTIVE_EVENTS_PREVENT_LEAVING: "CONFLICT",
+      POLICY_GROUP_NOT_FOUND: "NOT_FOUND", POLICY_NOT_MEMBER: "FORBIDDEN",
+      INVALID_PUBLICATION_TIME: "INVALID_REQUEST", INVALID_REVISION_TIME: "INVALID_REQUEST",
+      EVENT_NOT_FOUND_FOR_REVISION: "NOT_FOUND", EVENT_NOT_FOUND_FOR_REMOVAL: "NOT_FOUND",
+      NOT_EVENT_ORGANIZER: "FORBIDDEN", NOT_EVENT_ORGANIZER_FOR_REMOVAL: "FORBIDDEN",
+      EVENT_CANCELED: "CONFLICT", EVENT_CANCELED_FOR_REVISION: "CONFLICT", EVENT_ALREADY_CANCELED: "CONFLICT",
+      NO_MARK_TO_REMOVE: "NOT_FOUND",
+    },
+    cookies: {
+      session: {
+        name: "infiniteplans-session", input: "session",
+        issue: ["/auth/register", "/auth/login"].map(path => ({ path, value: "session", expires: "expiresAt" })),
+        clear: ["/auth/logout"],
+      },
+    },
+  });
+}

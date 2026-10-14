@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#a31f34"><meta name="description" content="Find your communities, make plans, and keep your MIT events together.">
+  <title>Infinite Plans</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20rx%3D%2211%22%20fill%3D%22%23a31f34%22%2F%3E%3Cg%20transform%3D%22translate%286%205%29%20scale%281.15%29%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%221.65%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M8%202v4m8-4v4M3%209h18M5%204h14a2%202%200%200%201%202%202v14a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2V6a2%202%200%200%201%202-2Zm7%2011.5c-1.5-2-2.2-3-3.5-3a3%203%200%200%200%200%206c1.3%200%202-1%203.5-3s2.2-3%203.5-3a3%203%200%200%201%200%206c-1.3%200-2-1-3.5-3Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+  <link rel="stylesheet" href="./styles.css"><script type="module" src="./app.ts"></script>
+</head>
+<body>
+<noscript>Infinite Plans needs JavaScript enabled to sign in and load your events.</noscript>
+<div id="app" v-cloak>
+  <header class="topbar">
+    <a class="brand" href="#explore" aria-label="Infinite Plans home"><span class="logo"><app-icon name="brand"></app-icon></span>Infinite Plans<span class="brand-tag">MADE FOR MIT</span></a>
+    <div v-if="me" class="account"><span class="avatar">{{ initials(me.username) }}</span><span class="username">{{ me.username }}</span><button class="icon-button" @click="signOut" :disabled="busy" aria-label="Sign out" title="Sign out"><app-icon name="logout"></app-icon></button></div>
+    <span v-else class="top-note">A little less scrolling. A lot more living.</span>
+  </header>
+  <main v-if="!checked" class="initial-loading" role="status">Getting your plans ready…</main>
+  <main v-else-if="!me" class="welcome">
+    <section class="welcome-copy">
+      <span class="eyebrow">YOUR PEOPLE. YOUR PLANS.</span>
+      <h1>Life beyond<br>the <span>problem set.</span></h1>
+      <p>Find what’s happening in your communities.<br>Save a possibility. Make it a plan.</p>
+      <div class="welcome-art" aria-hidden="true">
+        <div class="art-header"><span>Room for good things</span><span>∞</span></div>
+        <div class="art-week"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        <div class="art-grid"><i></i><i></i><i class="filled"></i><i></i><i class="light"></i><i></i><i></i><i class="light"></i><i></i><i></i><i class="filled"></i><i></i><i></i><i class="light"></i></div>
+        <div class="art-caption"><span class="dot"></span>Something to look forward to.</div>
+      </div>
+      <div class="welcome-foot"><app-icon name="users"></app-icon><span>Built around the groups you belong to.</span></div>
+    </section>
+    <section class="auth-card">
+      <span class="small-logo"><app-icon name="brand"></app-icon></span><h2>{{ authMode === 'login' ? 'Good to see you.' : 'Make yourself at home.' }}</h2>
+      <p class="muted">{{ authMode === 'login' ? 'Sign in to pick up where you left off.' : 'Your next plan starts with an account.' }}</p>
+      <div class="segmented" aria-label="Account options"><button :class="{active:authMode === 'login'}" @click="authMode = 'login'; error = ''" :disabled="busy">Sign in</button><button :class="{active:authMode === 'register'}" @click="authMode = 'register'; error = ''" :disabled="busy">Create account</button></div>
+      <p v-if="error" role="alert" class="alert">{{ error }}</p>
+      <form @submit.prevent="authenticate">
+        <label>Username<input v-model="username" name="username" autocomplete="username" required minlength="3" maxlength="32" pattern="[A-Za-z0-9_-]+" placeholder="Your username" :disabled="busy"></label>
+        <small v-if="authMode === 'register'">3–32 letters, numbers, underscores, or hyphens. Case-sensitive.</small>
+        <label>Password<input v-model="password" name="password" type="password" :autocomplete="authMode === 'login' ? 'current-password' : 'new-password'" required :minlength="authMode === 'register' ? 8 : undefined" maxlength="128" placeholder="Your password" :disabled="busy"></label>
+        <small v-if="authMode === 'register'">Use 8–128 characters.</small>
+        <button class="button primary wide" :disabled="busy">{{ busy ? 'One moment…' : authMode === 'login' ? 'Sign in' : 'Create account' }}<app-icon name="arrow"></app-icon></button>
+      </form>
+      <p class="auth-note"><app-icon name="lock"></app-icon>Your plans stay within your communities.</p>
+    </section>
+  </main>
+  <template v-else>
+    <nav class="navigation" aria-label="Main navigation">
+      <button @click="go('explore')" :class="{active:tab === 'explore' || tab === 'event'}" :aria-current="tab === 'explore' ? 'page' : undefined"><app-icon name="compass"></app-icon>Explore</button>
+      <button @click="go('groups')" :class="{active:tab === 'groups' || tab === 'group'}" :aria-current="tab === 'groups' ? 'page' : undefined"><app-icon name="users"></app-icon>Groups<span class="nav-count" v-if="myGroups.length">{{ myGroups.length }}</span></button>
+      <button @click="go('plans')" :class="{active:tab === 'plans'}" :aria-current="tab === 'plans' ? 'page' : undefined"><app-icon name="bookmark"></app-icon>My Events<span class="nav-count" v-if="saved.length">{{ saved.length }}</span></button>
+      <button @click="go('calendar')" :class="{active:tab === 'calendar'}" :aria-current="tab === 'calendar' ? 'page' : undefined"><app-icon name="calendar"></app-icon>Calendar</button>
+    </nav>
+    <main class="content" :aria-busy="loading">
+      <div v-if="error && !modal" class="alert banner" role="alert"><span>{{ error }}</span><button @click="refresh" class="text-button" :disabled="busy || loading">Try again</button></div>
+      <div v-if="notice" class="notice" role="status"><app-icon name="check"></app-icon>{{ notice }}<button class="icon-button" @click="notice = ''" aria-label="Dismiss notification"><app-icon name="close"></app-icon></button></div>
+      <button v-if="tab === 'group' || tab === 'event'" class="back-link" @click="go(tab === 'group' ? 'groups' : 'explore')"><app-icon name="back"></app-icon>{{ tab === 'group' ? 'All groups' : 'Explore events' }}</button>
+      <div class="page-heading"><div><p class="eyebrow">{{ tab === 'groups' || tab === 'group' ? 'BETTER TOGETHER' : 'MAKE TIME FOR WHAT MATTERS' }}</p><h1>{{ title }}</h1><p class="muted">{{ subtitle }}</p></div>
+        <button v-if="tab === 'groups'" class="button primary" @click="newGroup" :disabled="busy"><app-icon name="plus"></app-icon>Create group</button>
+        <button v-else-if="tab !== 'event' && myGroups.length" class="button primary" @click="newEvent()" :disabled="busy || loading"><app-icon name="plus"></app-icon>New event</button>
+      </div>
+      <p v-if="loading" class="loading" role="status"><span class="spinner"></span>Refreshing your view…</p>
+      <div v-if="['explore','groups','plans','calendar'].includes(tab)" class="toolbar">
+        <label class="search"><app-icon name="search"></app-icon><input v-model="search" type="search" :placeholder="tab === 'groups' ? 'Find a group…' : 'Search your events…'" :aria-label="tab === 'groups' ? 'Search groups' : 'Search events'"></label>
+        <span class="quiet" v-if="tab === 'groups'">{{ groups.length }} {{ groups.length === 1 ? 'community' : 'communities' }} · {{ myGroups.length }} joined</span>
+        <span class="quiet" v-else>{{ tab === 'explore' ? 'From your groups' : 'Going + Interested' }}</span>
+        <button class="icon-button" @click="refresh" :disabled="loading || busy" aria-label="Refresh view" title="Refresh"><app-icon name="refresh"></app-icon></button>
+      </div>
+      <section v-if="tab === 'groups'" aria-label="Groups">
+        <div class="cards group-cards" v-if="visibleGroups.length">
+          <article v-for="g in visibleGroups" :key="g.group" class="group-card">
+            <div class="card-top"><span class="group-avatar">{{ initials(g.name) }}</span><span class="badge" :class="g.member ? 'green' : ''">{{ g.member ? 'Joined' : g.pending ? 'Request pending' : g.policy === 'OPEN' ? 'Open to join' : 'Approval required' }}</span></div>
+            <h2><button class="title-button" @click="go('group', g.group)">{{ g.name }}</button></h2><p class="muted group-description">{{ g.description || 'A community for making plans together.' }}</p>
+            <button v-if="g.member" class="button outline wide" @click="go('group', g.group)">Open group<app-icon name="arrow"></app-icon></button>
+            <button v-else class="button outline wide" @click="join(g)" :disabled="busy || g.pending">{{ g.pending ? 'Request pending' : g.policy === 'OPEN' ? 'Join group' : 'Request to join' }}<app-icon v-if="!g.pending" name="plus"></app-icon></button>
+          </article>
+        </div>
+        <div v-else-if="!loading" class="empty"><span class="empty-icon"><app-icon name="users"></app-icon></span><h2>{{ search ? 'No matching groups' : 'Every community starts somewhere.' }}</h2><p>{{ search ? 'Try a different name or clear your search.' : 'Create the first group, then invite your people to join.' }}</p><button class="button primary" @click="search ? search = '' : newGroup()">{{ search ? 'Clear search' : 'Create a group' }}</button></div>
+      </section>
+      <section v-if="tab === 'group' && group" class="group-detail">
+        <div class="group-overview"><span class="group-avatar">{{ initials(group.name) }}</span><div><strong>{{ group.member ? 'You’re a member' : group.pending ? 'Your request is pending' : 'Find your place here' }}</strong><p class="muted">{{ group.policy === 'OPEN' ? 'Anyone signed in can join this group.' : 'An existing member approves new requests.' }}</p></div><button v-if="!group.member" class="button primary" @click="join(group)" :disabled="busy || group.pending">{{ group.pending ? 'Request pending' : group.policy === 'OPEN' ? 'Join group' : 'Request to join' }}</button><button v-else class="text-button danger-text" @click="openModal('leave')" :disabled="busy">Leave group</button><button v-if="!loading && members.length === 1 && members[0].user === me.user" class="button danger-outline" @click="openModal('delete')" :disabled="busy">Delete group</button></div>
+        <div v-if="group.member" class="group-columns">
+          <aside class="panel">
+            <h2>Members <span class="count">{{ members.length }}</span></h2>
+            <ul class="people"><li v-for="person in members" :key="person.user"><span class="avatar small">{{ initials(person.username || '?') }}</span>{{ person.username }}<span v-if="person.user === me.user" class="quiet">You</span></li></ul>
+            <h2>Join requests <span class="count">{{ requests.length }}</span></h2><p class="muted" v-if="!requests.length">All caught up.</p>
+            <ul class="requests"><li v-for="person in requests" :key="person.user"><strong>{{ person.username }}</strong><div><button class="button compact outline" @click="decide(person, false)" :disabled="busy">Decline</button><button class="button compact primary" @click="decide(person, true)" :disabled="busy">Approve</button></div></li></ul>
+            <h2>Joining policy</h2><p class="muted">{{ group.policy === 'OPEN' ? 'New members join immediately.' : 'New members request approval.' }}</p><button class="button outline wide" @click="changePolicy" :disabled="busy">{{ group.policy === 'OPEN' ? 'Require approval' : 'Open to everyone' }}</button><small v-if="group.policy === 'APPROVAL'">Opening the group also admits all pending requests.</small>
+          </aside>
+          <div class="group-events"><h2>Group events <span class="count">{{ events.length }}</span></h2><article v-for="e in events" :key="e.event" class="event-row"><span class="date-block"><small>{{ month(e.start) }}</small><strong>{{ day(e.start) }}</strong></span><div><h3><button class="title-button" @click="go('event', e.event)">{{ e.title }}</button></h3><p class="muted">{{ date(e.start) }} · {{ time(e.start) }} · {{ e.location }}</p></div><button class="icon-button" @click="go('event', e.event)" :aria-label="'Open ' + e.title"><app-icon name="arrow"></app-icon></button></article><div v-if="!events.length && !loading" class="empty small-empty"><app-icon name="calendar"></app-icon><h3>A plan starts with you.</h3><p>Publish the first event for this group.</p><button class="button primary" @click="newEvent()">Create an event</button></div></div>
+        </div>
+        <div v-else class="empty"><span class="empty-icon"><app-icon name="lock"></app-icon></span><h2>A little community, just for members.</h2><p>Join this group to see its events and meet the people making them happen.</p></div>
+      </section>
+      <section v-if="tab === 'explore' || tab === 'plans'" aria-label="Events">
+        <div v-if="visibleEvents.length" class="cards">
+          <article v-for="e in visibleEvents" :key="e.event" class="event-card" :class="{canceled:e.canceled}">
+            <p v-if="e.canceled" class="canceled-label">Event canceled</p>
+            <div class="card-top"><span class="date-block"><small>{{ month(e.start) }}</small><strong>{{ day(e.start) }}</strong></span><span class="badge">{{ groupName(e.group) }}</span></div>
+            <h2><button class="title-button" @click="go('event', e.event)">{{ e.title }}</button></h2>
+            <p class="event-description">{{ e.description || 'A good reason to get together.' }}</p>
+            <div v-if="e.timeChanged" class="time-change"><strong><app-icon name="clock"></app-icon>Time changed</strong><span><span class="schedule-label">Previously</span><del>{{ schedule(e.previousStart, e.previousEnd) }}</del></span><span><span class="schedule-label">Now</span>{{ schedule(e.start, e.end) }}</span></div>
+            <div class="event-meta"><span><app-icon name="clock"></app-icon>{{ date(e.start) }} · {{ time(e.start) }}</span><span><app-icon name="pin"></app-icon>{{ e.location }}</span></div>
+            <footer><span class="badge" :class="e.intent === 'GOING' ? 'green' : e.intent === 'INTERESTED' ? 'purple' : ''">{{ e.intent === 'GOING' ? 'Going' : e.intent === 'INTERESTED' ? 'Interested' : e.intent === 'NOT_GOING' ? 'Not going' : 'Make a plan' }}</span><button class="text-button" @click="go('event', e.event)">Details<app-icon name="arrow"></app-icon></button></footer>
+          </article>
+        </div>
+        <div v-else-if="!loading" class="empty"><span class="empty-icon"><app-icon :name="tab === 'plans' ? 'bookmark' : 'calendar'"></app-icon></span><h2>{{ search ? 'No events match your search.' : tab === 'plans' ? 'A little room for possibilities.' : myGroups.length ? 'Your next plan is waiting to happen.' : 'Find your people first.' }}</h2><p>{{ search ? 'Try another word or clear your search.' : tab === 'plans' ? 'Mark an event Going or Interested and it will appear here.' : myGroups.length ? 'Be the first to bring your group together. Create an event to get started.' : 'Join a group to discover its events, or create a community of your own.' }}</p><button class="button primary" @click="search ? search = '' : tab === 'plans' ? go('explore') : myGroups.length ? newEvent() : go('groups')">{{ search ? 'Clear search' : tab === 'plans' ? 'Explore events' : myGroups.length ? 'Create an event' : 'Discover groups' }}</button></div>
+      </section>
+      <section v-if="tab === 'calendar'" class="calendar-panel" aria-label="Saved events calendar">
+        <div class="calendar-heading"><h2>{{ monthTitle }}</h2><div><button v-if="saved.length" class="text-button" @click="firstPlan">First plan</button><button class="icon-button" @click="shiftMonth(-1)" aria-label="Previous month"><app-icon name="back"></app-icon></button><button class="icon-button" @click="shiftMonth(1)" aria-label="Next month"><app-icon name="arrow"></app-icon></button></div></div>
+        <p class="calendar-help muted">{{ timeZone }} · Going and Interested events, including cancellations.</p>
+        <div class="calendar-scroll"><div class="calendar-week"><span v-for="d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']">{{ d }}</span></div><div class="calendar-grid"><div v-for="cell in calendar" :key="cell.key" class="calendar-day" :class="{outside:!cell.current}"><time :datetime="cell.key" :class="{today:cell.key === today}">{{ cell.date.getDate() }}</time><button v-for="e in cell.events" :key="e.event" class="calendar-event" :class="{canceled:e.canceled,going:e.intent === 'GOING'}" @click="go('event', e.event)"><strong v-if="e.canceled">Event canceled</strong><strong v-if="e.timeChanged" class="calendar-changed">Time changed</strong><span v-if="e.timeChanged" class="calendar-previous">Was <del>{{ schedule(e.previousStart, e.previousEnd) }}</del></span><span>{{ e.timeChanged ? 'Now ' + schedule(e.start, e.end) : time(e.start) }} · {{ e.title }}</span></button></div></div></div>
+        <p v-if="!saved.length" class="calendar-empty">No saved events yet. <button class="text-button" @click="go('explore')">Find a plan<app-icon name="arrow"></app-icon></button></p>
+      </section>
+      <section v-if="tab === 'event' && event" class="event-detail">
+        <article class="detail-main panel"><p v-if="event.canceled" class="canceled-label">Event canceled</p><button class="badge badge-button" @click="go('group', event.group)">{{ groupName(event.group) }}<app-icon name="arrow"></app-icon></button><h2>{{ event.title }}</h2><p class="organizer">Organized by <strong>{{ event.organizerUsername }}</strong></p><div v-if="event.timeChanged" class="time-change"><strong><app-icon name="clock"></app-icon>Time changed</strong><span><span class="schedule-label">Previously</span><del>{{ schedule(event.previousStart, event.previousEnd) }}</del></span><span><span class="schedule-label">Now</span>{{ schedule(event.start, event.end) }}</span></div><div class="detail-facts"><div><span class="fact-icon"><app-icon name="calendar"></app-icon></span><p><strong>{{ date(event.start) }}</strong><span>{{ time(event.start) }} – {{ time(event.end) }}<template v-if="date(event.start) !== date(event.end)"> · Ends {{ date(event.end) }}</template></span><small>{{ timeZone }}</small></p></div><div><span class="fact-icon"><app-icon name="pin"></app-icon></span><p><strong>{{ event.location }}</strong><span>Event location</span></p></div></div><h3>About this event</h3><p class="long-description">{{ event.description || 'No additional details from the organizer.' }}</p>
+          <div v-if="event.organizer === me.user" class="organizer-tools"><h3>Your event</h3><div><button class="button outline" @click="newEvent(event)" :disabled="busy || event.canceled"><app-icon name="edit"></app-icon>Edit event</button><button class="button danger-outline" @click="openModal('cancel')" :disabled="busy || event.canceled">Cancel event</button></div></div>
+        </article>
+        <aside class="detail-side"><div class="panel response-panel"><span class="eyebrow">MAKE IT A PLAN</span><h2>{{ event.canceled ? 'Plans changed.' : 'Will you be there?' }}</h2><p class="muted">{{ event.canceled ? 'The organizer canceled this event. You can still remove your response.' : 'Going is a plan. Interested leaves the door open.' }}</p><div class="response-choices"><button v-for="choice in [{value:'GOING',label:'Going',icon:'check'},{value:'INTERESTED',label:'Interested',icon:'bookmark'},{value:'NOT_GOING',label:'Not going',icon:'close'}]" class="button outline" :class="{selected:event.intent === choice.value}" :aria-pressed="event.intent === choice.value" @click="mark(choice.value)" :disabled="busy || event.canceled"><app-icon :name="choice.icon"></app-icon>{{ choice.label }}</button></div><button v-if="event.intent" class="text-button clear-response" @click="removeMark" :disabled="busy">Clear my response</button><small>Going and Interested appear in My Events and Calendar.</small></div>
+          <div v-if="event.organizer === me.user" class="panel attendee-panel"><h2>Who’s coming</h2><p class="muted">Only you can see this list.</p><h3>Going <span class="count">{{ attendees.going.length }}</span></h3><p v-if="!attendees.going.length" class="muted">No responses yet.</p><ul class="people"><li v-for="p in attendees.going" :key="p.user"><span class="avatar small">{{ initials(p.username || '?') }}</span>{{ p.username }}</li></ul><h3>Interested <span class="count">{{ attendees.interested.length }}</span></h3><p v-if="!attendees.interested.length" class="muted">No responses yet.</p><ul class="people"><li v-for="p in attendees.interested" :key="p.user"><span class="avatar small">{{ initials(p.username || '?') }}</span>{{ p.username }}</li></ul></div>
+        </aside>
+      </section>
+      <footer class="page-footer"><span>∞ Infinite Plans</span><span>Make a little room for your people.</span></footer>
+    </main>
+  </template>
+  <dialog aria-label="Edit your plans" ref="dialog" class="dialog" @cancel.prevent="!busy && closeModal()" @click="e => { if(e.target === dialog && !busy) closeModal() }">
+    <template v-if="modal">
+      <div class="dialog-heading"><div><p class="eyebrow">{{ modal === 'group' ? 'BETTER TOGETHER' : modal === 'event' ? 'SOMETHING TO LOOK FORWARD TO' : 'A CHANGE OF PLANS' }}</p><h2>{{ modal === 'group' ? 'Create a group' : modal === 'event' ? editing ? 'Edit your event' : 'Bring people together.' : modal === 'leave' ? 'Leave this group?' : modal === 'delete' ? 'Delete this group?' : 'Cancel this event?' }}</h2></div><button class="icon-button" @click="closeModal" :disabled="busy" aria-label="Close dialog"><app-icon name="close"></app-icon></button></div>
+      <p v-if="error" role="alert" class="alert">{{ error }}</p>
+      <form v-if="modal === 'group'" @submit.prevent="createGroup"><label>Group name<input v-model="groupForm.name" required maxlength="120" placeholder="e.g. Campus book club" autofocus></label><label>What brings you together?<textarea v-model="groupForm.description" rows="3" maxlength="2000" placeholder="Give your community a little introduction."></textarea></label><label>Who can join?<select v-model="groupForm.policy"><option value="OPEN">Open — anyone signed in can join</option><option value="APPROVAL">Approval — a member reviews each request</option></select></label><p class="muted">You’ll be the first member. Members can publish events and manage join requests.</p><footer class="dialog-actions"><button type="button" class="button outline" @click="closeModal" :disabled="busy">Never mind</button><button class="button primary" :disabled="busy">{{ busy ? 'Creating…' : 'Create group' }}</button></footer></form>
+      <form v-else-if="modal === 'event'" @submit.prevent="saveEvent"><label>Group<select v-model="eventForm.group" required :disabled="editing"><option v-for="g in myGroups" :value="g.group" :key="g.group">{{ g.name }}</option></select></label><label>Event title<input v-model="eventForm.title" required maxlength="160" placeholder="What’s the plan?" autofocus></label><div class="form-grid"><label>Starts<input v-model="eventForm.start" type="datetime-local" required></label><label>Ends<input v-model="eventForm.end" type="datetime-local" required></label></div><small>Times in {{ timeZone }}. Events can use any date.</small><label>Location<input v-model="eventForm.location" required maxlength="250" placeholder="Where are we meeting?"></label><label>Description<textarea v-model="eventForm.description" rows="3" maxlength="5000" placeholder="What should people know?"></textarea></label><p class="muted"><app-icon name="lock"></app-icon>Visible only to current members of this group.</p><footer class="dialog-actions"><button type="button" class="button outline" @click="closeModal" :disabled="busy">Never mind</button><button class="button primary" :disabled="busy || !myGroups.length">{{ busy ? 'Saving…' : editing ? 'Save changes' : 'Publish event' }}</button></footer></form>
+      <template v-else-if="modal === 'leave'"><p>You’ll leave <strong>{{ group?.name }}</strong> and lose access to its events. All your responses to its events will be cleared, including canceled events.</p><p class="muted">Rejoining won’t restore those responses. Cancel any uncanceled events you organize here before leaving.</p><footer class="dialog-actions"><button class="button outline" @click="closeModal" :disabled="busy">Stay in group</button><button class="button danger" @click="leave" :disabled="busy">{{ busy ? 'Leaving…' : 'Leave group' }}</button></footer></template>
+      <template v-else-if="modal === 'delete'"><p>Delete <strong>{{ group?.name }}</strong>? You are its last member.</p><p class="muted">This permanently removes the group and its pending requests. Its events will no longer be accessible, and your responses will be cleared. Cancel every uncanceled event you organize here first.</p><p class="muted">This cannot be undone. To keep the group available for others to join, choose Leave group instead.</p><footer class="dialog-actions"><button class="button outline" @click="closeModal" :disabled="busy">Keep group</button><button class="button danger" @click="deleteGroup" :disabled="busy">{{ busy ? 'Deleting…' : 'Delete group' }}</button></footer></template>
+      <template v-else><p>Cancel <strong>{{ event?.title }}</strong>?</p><p class="muted">It will disappear from discovery. People who saved it will still see it labeled “Event canceled.” This cannot be undone.</p><footer class="dialog-actions"><button class="button outline" @click="closeModal" :disabled="busy">Keep event</button><button class="button danger" @click="cancelEvent" :disabled="busy">{{ busy ? 'Canceling…' : 'Cancel event' }}</button></footer></template>
+    </template>
+  </dialog>
+</div>
+</body>
+</html>

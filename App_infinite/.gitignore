@@ -1,0 +1,27 @@
+# Installed dependencies
+node_modules/
+
+# Local credentials and environment overrides; keep the setup template
+.env
+.env.*
+!.env.example
+
+# Build, cache, and test output
+/dist/
+/build/
+/coverage/
+/.cache/
+*.tsbuildinfo
+*.log
+
+# Archived, unused implementation experiments (kept locally)
+/drafts/composition-blocked/
+
+# macOS metadata
+.DS_Store
+# Local implementation notes (license attribution lives in LICENSES/)
+/THIRD_PARTY_NOTICES.md
+/IMPLEMENTATION.md
+
+# Keep bun.lock, generated/, design/, tests/ tracked.
+# generated/wire.ts is imported by the application and its tests.
