@@ -66,9 +66,12 @@ owner-enforced. Read responses are snapshots; later revocation cannot erase data
 already delivered to a browser. Clients reload affected views after mutations.
 
 The paired documents define the complete selected endpoint, view, former, and
-computation inventory for this phase. There are no standalone internal reactions:
-required coordination belongs to its endpoint. Notifications and external
-identity providers are not selected. Executable registration and generated wire
+computation inventory for this phase. Required coordination belongs to endpoints,
+except the two explicitly selected synchronous event-notification reactions;
+their endpoints wait for all accepted work before success. There are no separate
+cleanup reactions. In-app notifications and comments
+share this boundary. External identity providers and external notification
+delivery are not selected. Executable registration and generated wire
 contracts will be added only after these declarations are implemented.
 
 ## Declaration naming
@@ -87,7 +90,9 @@ protected route. HTTP supplies its cookie value or null; the typed local client
 also supplies null when the caller omits session. Browser bodies cannot override
 the cookie. These adapters preserve NOT_SIGNED_IN for missing credentials.
 
-All 24 routes are POST/JSON under /api. The HTTP policy maps expected refusals to
+All 37 routes are POST/JSON under /api, with a 768 KiB body limit to accommodate
+bounded picture uploads. Picture reads and writes use the same authenticated
+serialized boundary as other workflows. The HTTP policy maps expected refusals to
 INVALID_REQUEST (400), UNAUTHORIZED (401), FORBIDDEN (403), NOT_FOUND (404), or
 CONFLICT (409). Unknown/inaccessible events remain identical NOT_FOUND responses;
 unexpected failures are opaque INTERNAL_ERROR. Origin checks apply to login,
@@ -100,3 +105,7 @@ An aborted/timed-out waiter does not cancel accepted work or free the queue.
 Shutdown stops admission, drains accepted work, and closes MongoDB. /health is
 an infrastructure ping, not an application-state read; it returns 503 when the
 database is unavailable or the host is draining.
+
+After explicit signup or login succeeds, Vue replaces the route with #explore,
+clears prior route/discussion/search state, and loads Explore. Failed authentication
+keeps the form and current route. Ordinary authenticated reloads retain deep links.

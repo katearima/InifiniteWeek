@@ -6,14 +6,18 @@ import { SessioningConcept } from "../../src/concepts/Sessioning/Sessioning.ts";
 import { GroupingConcept } from "../../src/concepts/Grouping/Grouping.ts";
 import { EventPublishingConcept } from "../../src/concepts/EventPublishing/EventPublishing.ts";
 import { EventMarkingConcept } from "../../src/concepts/EventMarking/EventMarking.ts";
+import { CommentingConcept, type Comment } from "../../src/concepts/Commenting/Commenting.ts";
+import { NotifyingConcept, type Notification } from "../../src/concepts/Notifying/Notifying.ts";
 import { cleanupDatabases, testDatabase } from "../support/reusable/mongo.ts";
+import { samplePicture } from "../support/picture.ts";
 
 test("all constructors only acquire collection handles and never perform database operations", () => {
   let handles = 0;
   const db = { collection: () => { handles++; return new Proxy({}, { get() { throw new Error("Unexpected database operation"); } }); } } as unknown as Db;
   new RegisteringConcept(db); new AuthenticatingConcept(db); new SessioningConcept(db);
   new GroupingConcept(db); new EventPublishingConcept(db); new EventMarkingConcept(db);
-  expect(handles).toBe(6);
+  new CommentingConcept(db); new NotifyingConcept(db);
+  expect(handles).toBe(8);
 });
 test("registration and session index initialization retries after failure", async () => {
   for (const kind of ["register", "session"] as const) {
@@ -30,7 +34,7 @@ test("registration and session index initialization retries after failure", asyn
     expect(attempts).toBe(kind === "register" ? 3 : 2); expect(inserts).toBe(2);
   }
 });
-test("a fresh MongoDB client reads all six concepts persisted by other instances", async () => {
+test("a fresh MongoDB client reads all eight concepts persisted by other instances", async () => {
   const db = await testDatabase();
   const { user } = await new RegisteringConcept(db).register({ username: "persist" });
   await new AuthenticatingConcept(db).set({ user, password: "persistent-password" });
@@ -38,6 +42,11 @@ test("a fresh MongoDB client reads all six concepts persisted by other instances
   const { group } = await new GroupingConcept(db).createGroup({ user, name: "Persist", description: "", policy: "OPEN" });
   const { event } = await new EventPublishingConcept(db).publish({ organizer: user, group, title: "Persist", description: "", start: new Date("2000-01-01"), end: new Date("2000-01-02"), location: "MIT" });
   await new EventMarkingConcept(db).mark({ user, event, intent: "GOING" });
+  await new GroupingConcept(db).setPicture({ user, group, picture: samplePicture });
+  await new EventPublishingConcept(db).setPicture({ user, event, picture: samplePicture });
+  const comment = crypto.randomUUID() as Comment, notification = crypto.randomUUID() as Notification, at = new Date();
+  await new CommentingConcept(db).post({ author: user, subject: event, comment, text: "Persisted discussion", at });
+  await new NotifyingConcept(db).send({ user, subject: event, notification, message: "Event updated.", at });
   const client = new MongoClient(process.env.MONGODB_TEST_URL!);
   try {
     await client.connect(); const reopened = client.db(db.databaseName);
@@ -46,7 +55,11 @@ test("a fresh MongoDB client reads all six concepts persisted by other instances
     expect(await new SessioningConcept(reopened).use({ session })).toEqual({ subject: user });
     expect(await new GroupingConcept(reopened)._isMember({ user, group })).toEqual({ member: true });
     expect(await new EventPublishingConcept(reopened)._getEventDetails({ event })).toHaveLength(1);
+    expect(await new GroupingConcept(reopened)._getPicture({ group })).toEqual([{ picture: samplePicture }]);
+    expect(await new EventPublishingConcept(reopened)._getPicture({ event })).toEqual([{ picture: samplePicture }]);
     expect(await new EventMarkingConcept(reopened)._getMyEvents({ user })).toEqual([{ event, intent: "GOING" }]);
+    expect(await new CommentingConcept(reopened)._getComments({ subject: event })).toMatchObject([{ comment, text: "Persisted discussion" }]);
+    expect(await new NotifyingConcept(reopened)._getNotifications({ user })).toMatchObject([{ notification, read: false }]);
   } finally { await client.close(); }
 });
 

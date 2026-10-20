@@ -1,4 +1,3 @@
-# Infinite Plans
 
 ## First-time setup
 

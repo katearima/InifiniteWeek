@@ -55,21 +55,33 @@ const Publish = endpoint("/events/publish", ({ session, user, group, title, desc
   ), inputs({ group: "text", title: "text", description: "text", start: "date", end: "date", location: "text" }));
 const Revise = endpoint("/events/revise", ({ session, user, event, title, description, start, end, location, startDate, endDate }) => receive({ session, event, title, description, start, end, location })
   .then(Sessioning.use({ session }).responds({ subject: user })).then(
-    where(canManageEvent({ user, event }), compute(computations.eventDate, { value: start }, startDate), compute(computations.eventDate, { value: end }, endDate)).then(EventPublishing.revise({ user, event, title, description, start: startDate, end: endDate, location }).responds({}))
-      .then(respond({ event })).named("owner"),
+    where(canManageEvent({ user, event }), compute(computations.eventDate, { value: start }, startDate), compute(computations.eventDate, { value: end }, endDate))
+      .then(EventPublishing.revise({ user, event, title, description, start: startDate, end: endDate, location }).responds({})).named("owner"),
     where(canReadEvent({ user, event }), no(canManageEvent({ user, event }))).then(respond({ error: "NOT_EVENT_ORGANIZER" })).named("other"),
     where(no(canReadEvent({ user, event }))).then(respond({ error: "NOT_FOUND" })).named("hidden"),
-  ), inputs({ event: "text", title: "text", description: "text", start: "date", end: "date", location: "text" }));
+  ).afterFlowSettles().where(canManageEvent({ user, event })).then(respond({ event })),
+  inputs({ event: "text", title: "text", description: "text", start: "date", end: "date", location: "text" }));
 const Remove = endpoint("/events/remove", ({ session, user, event }) => receive({ session, event })
   .then(Sessioning.use({ session }).responds({ subject: user })).then(
-    where(canManageEvent({ user, event })).then(EventPublishing.remove({ user, event }).responds({})).then(respond({ event })).named("owner"),
+    where(canManageEvent({ user, event })).then(EventPublishing.remove({ user, event }).responds({})).named("owner"),
     where(canReadEvent({ user, event }), no(canManageEvent({ user, event }))).then(respond({ error: "NOT_EVENT_ORGANIZER" })).named("other"),
     where(no(canReadEvent({ user, event }))).then(respond({ error: "NOT_FOUND" })).named("hidden"),
-  ), inputs({ event: "text" }));
+  ).afterFlowSettles().where(canManageEvent({ user, event })).then(respond({ event })), inputs({ event: "text" }));
 const Attendees = endpoint("/events/attendees", ({ session, user, event }) => receive({ session, event })
   .then(Sessioning.use({ session }).responds({ subject: user })).then(
     where(canManageEvent({ user, event })).then(respond({ going: going({ user, event }), interested: interested({ user, event }) })).named("owner"),
     where(canReadEvent({ user, event }), no(canManageEvent({ user, event }))).then(respond({ error: "NOT_EVENT_ORGANIZER" })).named("other"),
     where(no(canReadEvent({ user, event }))).then(respond({ error: "NOT_FOUND" })).named("hidden"),
   ), inputs({ event: "text" }));
-export const composition = { Explore, GroupEvents, Details, Publish, Revise, Remove, Attendees, details, exploreRows, groupRows, going, interested };
+const Picture = endpoint("/events/picture", ({ session, user, event, picture }) => receive({ session, event })
+  .then(Sessioning.use({ session }).responds({ subject: user })).then(
+    where(canReadEvent({ user, event }), EventPublishing._getPicture({ event }).is({ picture })).then(respond({ picture })).named("readable"),
+    where(no(canReadEvent({ user, event }))).then(respond({ error: "NOT_FOUND" })).named("hidden"),
+  ), inputs({ event: "text" }));
+const SetPicture = endpoint("/events/set-picture", ({ session, user, event, picture }) => receive({ session, event, picture })
+  .then(Sessioning.use({ session }).responds({ subject: user })).then(
+    where(canManageEvent({ user, event })).then(EventPublishing.setPicture({ user, event, picture }).responds({})).then(respond({ event })).named("owner"),
+    where(canReadEvent({ user, event }), no(canManageEvent({ user, event }))).then(respond({ error: "NOT_EVENT_ORGANIZER" })).named("other"),
+    where(no(canReadEvent({ user, event }))).then(respond({ error: "NOT_FOUND" })).named("hidden"),
+  ), inputs({ event: "text", picture: "text" }));
+export const composition = { Picture, SetPicture, Explore, GroupEvents, Details, Publish, Revise, Remove, Attendees, details, exploreRows, groupRows, going, interested };

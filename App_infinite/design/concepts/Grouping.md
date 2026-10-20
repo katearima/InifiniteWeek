@@ -33,6 +33,7 @@ JoinStatus is JOINED or PENDING
 a set of Groups with
   a name String
   a description String
+  a picture String
   a policy JoiningPolicy
   a members set of User
   a joinRequests set of User
@@ -43,6 +44,7 @@ Rule: An OPEN group's joinRequests is empty.
 Rule: All members have equal authority to approve or reject requests and change the joining policy.
 Rule: Whenever a group becomes OPEN, all pending requesters become members and their requests are removed as part of the same action. Existing members remain unless explicitly leaving.
 Rule: A refused action leaves the state unchanged.
+Rule: All members have equal authority to change the group picture. Picture is initially empty. Empty means no picture; otherwise it is a JPEG data URL, at most 512 KiB decoded, with valid JPEG framing and frame dimensions of 1 through 1600 pixels on each axis. Existing records without a picture read as empty. Membership changes preserve the picture; deletion removes it.
 ```
 
 ## Actions
@@ -141,6 +143,21 @@ deleteGroup(user: User, group: Group) : returns ()
     remove group from Groups, including all its membership and pending requests
     returns
 
+setPicture(user: User, group: Group, picture: String) : returns ()
+  where group is not in Groups
+  then
+    refuses PICTURE_GROUP_NOT_FOUND "There is no such group."
+  where group exists and user is not a member
+  then
+    refuses PICTURE_NOT_MEMBER "Only a group member can change its picture."
+  where group exists and user is a member and picture is invalid
+  then
+    refuses INVALID_PICTURE "Choose a supported picture of at most 512 KiB after resizing."
+  where group exists and user is a member and picture is valid
+  then
+    replace picture, preserving all other group fields
+    returns
+
 changePolicy(user: User, group: Group, policy: JoiningPolicy) : returns ()
   where group is not in Groups
   then
@@ -164,6 +181,9 @@ changePolicy(user: User, group: Group, policy: JoiningPolicy) : returns ()
 ## Queries
 
 ```queries
+_getPicture(group: Group) : optional (picture: String)
+  Returns the group picture or an empty string when absent. Returns no row for unknown or deleted groups.
+
 _getGroupDetails(group: Group) : optional (name: String, description: String, policy: JoiningPolicy)
   Returns the group's name, description, and current joining policy.
   Returns no row when group is unknown.

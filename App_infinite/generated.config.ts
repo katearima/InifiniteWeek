@@ -18,5 +18,7 @@ export default {
     new URL("./design/compositions/groups.md", import.meta.url),
     new URL("./design/compositions/events.md", import.meta.url),
     new URL("./design/compositions/plans.md", import.meta.url),
+    new URL("./design/compositions/comments.md", import.meta.url),
+    new URL("./design/compositions/notifications.md", import.meta.url),
   ] },
 };

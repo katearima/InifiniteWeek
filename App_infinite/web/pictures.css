@@ -1,0 +1,11 @@
+.cover-picture { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; background: #f2eeed; }
+.event-card > .cover-picture { margin-bottom: 20px; }
+.detail-main > .cover-picture { margin-bottom: 24px; max-height: 380px; }
+.group-picture-tools { display: flex; justify-content: flex-end; margin: -8px 0 20px; }
+.picture-picker { padding: 16px; border: 1px solid #e6dddd; border-radius: 14px; margin: 16px 0; }
+.picture-picker label { margin-top: 0; }
+.picture-picker input { padding: 10px; max-width: 100%; }
+.picture-picker .cover-picture { max-height: 220px; margin: 12px 0; }
+.picture-picker .text-button { margin-top: 10px; }
+.picture-picker small { display: block; margin-top: 8px; }
+.picture-warning { margin: 12px 0; }

@@ -6,4 +6,9 @@
 *.swo
 *~
 
-/AGENTS.md
+# Internal builder instructions and implementation history.
+AGENTS.md
+/App_infinite/design/changes.md
+
+# Keep the demo recording locally, outside future commits.
+/Video/user-journey.mov

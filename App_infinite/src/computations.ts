@@ -1,3 +1,4 @@
+import type { Comment } from "./concepts/Commenting/Commenting.ts";
 /** A sortable key for one row, not a transformation of a collected former. */
 export function eventSortKey({ start, event }: { start: Date; event: string }): string {
   if (!(start instanceof Date) || !Number.isFinite(start.getTime())) throw new Error("Invalid event reference");
@@ -14,4 +15,20 @@ export function requireEventGroup({ group }: { group: string }): string {
 /** Decode a validated local/JSON date without consulting a clock or state. */
 export function eventDate({ value }: { value: string | Date }): Date {
   return new Date(value);
+}
+
+export function newIdentity(_input: Record<string, never>): string {
+  return crypto.randomUUID();
+}
+
+export function commentPermissions({ user, author, organizer }: { user: string; author: string; organizer: string }) {
+  return { canEdit: user === author, canRemove: user === author || user === organizer };
+}
+
+export function eventSubjects({ event }: { event: string }): string[] {
+  return [event];
+}
+
+export function newCommentIdentity(_input: Record<string, never>): Comment {
+  return crypto.randomUUID() as Comment;
 }

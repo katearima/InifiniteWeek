@@ -1,5 +1,39 @@
 # Groups
 
+## Group picture
+
+[Picture](reaction:groups.Picture) takes group and returns {picture} from
+Grouping._getPicture for any authenticated user, matching group discovery.
+Unknown/deleted groups return NOT_FOUND; an empty string means no picture.
+[Set picture](reaction:groups.SetPicture) takes group and picture, checks group
+existence and current membership, then calls Grouping.setPicture with the session
+actor and returns {group}. Nonmembers receive NOT_GROUP_MEMBER; unknown/deleted
+groups receive NOT_FOUND. All current members have equal picture authority,
+matching joining-policy controls. Grouping also checks membership atomically.
+Empty removes the picture; repeated writes/removal succeed. Membership changes
+preserve it, and deleting the group clears its stored picture. No notifications
+are generated. Reads/writes use the shared queue, with last accepted write winning.
+
+Use the same image limits, validation, separate authenticated loading, and
+failure rules as [event covers](events.md). On group creation, prepare the image
+first, create the group, then upload. If upload is not confirmed, retain and open
+the created group, report uncertainty about its picture, and read its current
+picture before offering a deliberate retry there.
+Show pictures on discovery cards and group detail pages, with member controls
+for changing/removing pictures. No group messaging is added in this increment.
+
+```endpoints
+groups.Picture at /groups/picture
+groups.SetPicture at /groups/set-picture
+```
+
+Leave and Delete clear the caller's notifications for the group's event
+collection before mark cleanup and membership removal, after all existing
+checks; see [notifications](notifications.md). Failure prevents later effects.
+Later failure can leave notices cleared while membership remains. Rejoining
+restores no notices. Authored comments remain but require membership to read
+or manage; deleted groups make them inaccessible.
+
 All endpoints follow [accounts](reusable/accounts.md) and derive user from the
 session. Grouping owns group state and its OPEN/APPROVAL lifecycle. This module
 adds the application-specific departure obligation involving events and marks.

@@ -43,6 +43,7 @@ a set of Events with
   a start DateTime
   an end DateTime
   a location String
+  a picture String
   a canceled Flag
   a timeChanged Flag
   a previousStart DateTime
@@ -54,6 +55,7 @@ Rule: Removal marks an event canceled and retains its identity and details perma
 Rule: Only the organizer may revise or remove an event. Canceled events cannot be revised or restored.
 Rule: Before any time revision, timeChanged is false and previousStart/previousEnd equal the current times. After a time revision, they hold the times immediately before the latest change and timeChanged is true. Non-time edits and cancellation preserve this history.
 Rule: A refused action leaves state unchanged.
+Rule: Picture is initially empty. Empty means no cover; otherwise it is a JPEG data URL, at most 512 KiB decoded, with valid JPEG framing and frame dimensions of 1 through 1600 pixels on each axis. It is read separately from textual details. Existing records without a picture read as empty.
 ```
 
 ## Actions
@@ -69,7 +71,7 @@ publish(organizer: User, group: Group, title: String, description: String, start
   then
     refuses INVALID_PUBLICATION_TIME "The event must start before it ends."
 
-revise(user: User, event: Event, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns ()
+revise(user: User, event: Event, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns (timeOrLocationChanged: Flag)
   where event is not in Events
   then
     refuses EVENT_NOT_FOUND_FOR_REVISION "There is no such event to revise."
@@ -85,10 +87,29 @@ revise(user: User, event: Event, title: String, description: String, start: Date
     refuses INVALID_REVISION_TIME "The event must start before it ends."
   where event is in Events and user is its organizer and its canceled is false and start is before end
   then
+    set timeOrLocationChanged to whether start, end, or location differs from its current value before revision
     if either supplied time differs from its current value, first copy the current start/end into previousStart/previousEnd and set timeChanged true
     otherwise preserve timeChanged and both previous times
     set the event's title, description, start, end, and location to the supplied values
     leave the event's identity, organizer, and group unchanged
+    returns timeOrLocationChanged
+
+setPicture(user: User, event: Event, picture: String) : returns ()
+  where event is not in Events
+  then
+    refuses EVENT_NOT_FOUND_FOR_REVISION "There is no such event to revise."
+  where event exists and user is not its organizer
+  then
+    refuses NOT_EVENT_ORGANIZER "Only the event's organizer can revise it."
+  where event exists and user is its organizer and event is canceled
+  then
+    refuses EVENT_CANCELED_FOR_REVISION "A canceled event cannot be revised."
+  where event exists and user is its organizer and event is not canceled and picture is invalid
+  then
+    refuses INVALID_PICTURE "Choose a supported picture of at most 512 KiB after resizing."
+  where event exists and user is its organizer and event is not canceled and picture is valid
+  then
+    replace picture, preserving all other event fields
     returns
 
 remove(user: User, event: Event) : returns ()
@@ -112,6 +133,9 @@ remove(user: User, event: Event) : returns ()
 ## Queries
 
 ```queries
+_getPicture(event: Event) : optional (picture: String)
+  Returns the cover, or an empty string when no cover exists, including for canceled events. Returns no row for an unknown event.
+
 _getEventDetails(event: Event) : optional (organizer: User, group: Group, title: String, description: String, start: DateTime, end: DateTime, location: String, canceled: Flag, timeChanged: Flag, previousStart: DateTime, previousEnd: DateTime)
   Returns the event's organizer, group, details, and canceled status when event is in Events, including canceled events.
   Returns the latest time-change information. previousStart/previousEnd are meaningful as old times only when timeChanged is true.

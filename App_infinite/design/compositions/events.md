@@ -1,5 +1,44 @@
 # Events
 
+## Cover picture
+
+[Picture](reaction:events.Picture) at /events/picture takes event and returns
+{picture} from EventPublishing._getPicture after access.canReadEvent. Unknown
+and inaccessible events return NOT_FOUND. Empty picture means no cover.
+[Set picture](reaction:events.SetPicture) at /events/set-picture takes event and
+picture, checks canReadEvent then canManageEvent, calls EventPublishing.setPicture
+with the session actor, and returns {event}. Readable non-organizers receive
+NOT_EVENT_ORGANIZER. Canceled events retain readable covers but cannot change
+them. Blank picture removes a cover; setting the same picture succeeds. This
+action changes no schedule history and generates no notifications.
+
+The browser accepts JPEG, PNG, and WebP files up to 10 MiB, decodes and resizes to
+at most 1600 pixels per axis, and re-encodes JPEG at most 512 KiB. The server
+validates the canonical data URL, byte limit, JPEG framing, and frame dimensions;
+it does not promise full image decoding. SVG, external URLs, and arbitrary data
+URLs are not accepted. Reads use the authenticated JSON API, not public files.
+Images are fetched separately so ordinary event rows do not carry image bytes.
+All picture reads and writes share the application queue. Uploads use the same
+768 KiB HTTP body cap as other requests. Validation refusals and confirmed
+pre-commit failures preserve the old picture. Lost acknowledgements and storage
+errors after a possible commit have uncertain outcomes: read Picture to establish
+current state before a deliberate retry; never promise rollback. Concurrent
+changes serialize, with the last accepted write winning.
+
+Creation and picture upload are separate requests: create the event first, then
+set its picture. If upload is not confirmed, keep and open the created event,
+report the uncertain picture outcome, and reload its picture before offering a
+deliberate retry. Users retry the picture, not publication.
+The creation dialog prepares the image before either request. Editing a cover is
+separate from editing text/time/location, avoiding ambiguous partial saves.
+Clear loaded images and pending selections on logout and route changes; refresh
+on opening views, focus, and successful mutations. Do not automatically retry writes.
+
+```endpoints
+events.Picture at /events/picture
+events.SetPicture at /events/set-picture
+```
+
 All endpoints authenticate as described in [accounts](reusable/accounts.md) and
 run inside its shared serialization boundary. Every event belongs to a group.
 All events are assumed upcoming: validate dates and start-before-end, but never
@@ -61,6 +100,11 @@ the session user; its canceled-event/date refusals propagate. Return {event} onl
 after success. Group and organizer cannot be changed. Repeating the same valid
 revision succeeds with the same resulting details.
 
+An actual start/end/location change completes the synchronous recipient notices
+specified in [notifications](notifications.md) before success. The owning action
+returns timeOrLocationChanged for this purpose; the public response stays {event}.
+Delivery failure retains the event change and may leave partial notices.
+
 [Remove](reaction:events.Remove) takes event and uses the same access
 and organizer checks, then asks EventPublishing.remove with the authenticated
 user. Return {event} after cancellation commits. Unknown/inaccessible requests
@@ -68,6 +112,10 @@ return NOT_FOUND; readable non-owned requests return NOT_EVENT_ORGANIZER. Owner
 refusals, including EVENT_ALREADY_CANCELED, propagate. Repeating a completed
 cancellation returns that refusal; details can confirm the current status.
 Removal retains event details and marks and does not trigger mark cleanup.
+
+Cancellation also completes [notifications](notifications.md) before success.
+Delivery failure retains cancellation and may leave partial notices; repeated
+cancellation still refuses.
 
 ```endpoints
 events.Publish at /events/publish
@@ -111,4 +159,7 @@ the schedule immediately before the latest actual time change, not per-user
 unread state. Title/description/location-only edits and identical retries preserve
 it. Cancellation retains the history, with cancellation presented first.
 Calendar placement and sorting continue to use the current start/end only.
+Calendar shows only the latest previous/current time interval per event, never
+one entry per revision. Once canceled, its calendar entry shows cancellation
+instead of the older time-change notice. Notification entries remain separate.
 Older stored events have timeChanged false until their next time revision.

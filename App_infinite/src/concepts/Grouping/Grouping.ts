@@ -1,4 +1,5 @@
 import type { Collection, Db } from "mongodb";
+import { validatePicture } from "../../picture.ts";
 
 export type Group = string & { readonly __brand: "Group" };
 export type JoiningPolicy = "OPEN" | "APPROVAL";
@@ -19,9 +20,12 @@ export class PolicyNotMember extends Error {}
 export class DeleteGroupNotFound extends Error {}
 export class DeleteNotMember extends Error {}
 export class DeleteNotLastMember extends Error {}
+export class PictureGroupNotFound extends Error {}
+export class PictureNotMember extends Error {}
 export interface GroupDocument<User> {
   _id: Group; name: string; description: string; policy: JoiningPolicy;
   members: User[]; joinRequests: User[]; revision: number; deleted?: boolean;
+  picture?: string;
 }
 
 /** Owns membership and admission, independently of event and account state. */
@@ -97,11 +101,11 @@ export class GroupingConcept<User extends string> {
       if (!row.members.includes(user)) throw new DeleteNotMember("Only a member can delete the group.");
       if (row.members.length !== 1) throw new DeleteNotLastMember("Only the last member can delete the group.");
       // Keep the identity as a tombstone so startup provisioning cannot restore it.
-      return { row: { ...row, deleted: true, members: [], joinRequests: [], policy: "OPEN" }, result: {} };
+      return { row: { ...row, deleted: true, picture: "", members: [], joinRequests: [], policy: "OPEN" }, result: {} };
     });
   }
   async _isOnlyMember({ user, group }: { user: User; group: Group }) {
-    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } });
+    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } }, { projection: { members: 1 } });
     return { only: !!row && row.members.length === 1 && row.members[0] === user };
   }
   async changePolicy({ user, group, policy }: { user: User; group: Group; policy: JoiningPolicy }) {
@@ -116,28 +120,40 @@ export class GroupingConcept<User extends string> {
       return { row, result: {} };
     });
   }
+  async setPicture({ user, group, picture }: { user: User; group: Group; picture: string }) {
+    return this.#transition(group, row => {
+      if (!row) throw new PictureGroupNotFound("There is no such group.");
+      if (!row.members.includes(user)) throw new PictureNotMember("Only a group member can change its picture.");
+      validatePicture(picture);
+      return { row: { ...row, picture }, result: {} };
+    });
+  }
+  async _getPicture({ group }: { group: Group }) {
+    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } }, { projection: { picture: 1 } });
+    return row ? [{ picture: row.picture ?? "" }] : [];
+  }
   async _getGroupDetails({ group }: { group: Group }) {
-    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } });
+    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } }, { projection: { name: 1, description: 1, policy: 1 } });
     return row ? [{ name: row.name, description: row.description, policy: row.policy }] : [];
   }
   async _getGroups(_input: Record<string, never>) {
-    return (await this.groups.find({ deleted: { $ne: true } }).sort({ _id: 1 }).toArray()).map(row => ({ group: row._id, name: row.name, description: row.description, policy: row.policy }));
+    return (await this.groups.find({ deleted: { $ne: true } }, { projection: { name: 1, description: 1, policy: 1 } }).sort({ _id: 1 }).toArray()).map(row => ({ group: row._id, name: row.name, description: row.description, policy: row.policy }));
   }
   async _getMembers({ group }: { group: Group }) {
-    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } });
+    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } }, { projection: { members: 1 } });
     return (row?.members ?? []).sort().map(user => ({ user }));
   }
   async _isMember({ user, group }: { user: User; group: Group }) {
-    return { member: (await this.groups.findOne({ _id: group, members: user, deleted: { $ne: true } })) !== null };
+    return { member: (await this.groups.findOne({ _id: group, members: user, deleted: { $ne: true } }, { projection: { _id: 1 } })) !== null };
   }
   async _getGroupsByUser({ user }: { user: User }) {
-    return (await this.groups.find({ members: user, deleted: { $ne: true } }).sort({ _id: 1 }).toArray()).map(row => ({ group: row._id }));
+    return (await this.groups.find({ members: user, deleted: { $ne: true } }, { projection: { _id: 1 } }).sort({ _id: 1 }).toArray()).map(row => ({ group: row._id }));
   }
   async _isPending({ user, group }: { user: User; group: Group }) {
-    return { pending: (await this.groups.findOne({ _id: group, joinRequests: user, deleted: { $ne: true } })) !== null };
+    return { pending: (await this.groups.findOne({ _id: group, joinRequests: user, deleted: { $ne: true } }, { projection: { _id: 1 } })) !== null };
   }
   async _getPendingRequests({ group }: { group: Group }) {
-    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } });
+    const row = await this.groups.findOne({ _id: group, deleted: { $ne: true } }, { projection: { joinRequests: 1 } });
     return (row?.joinRequests ?? []).sort().map(user => ({ user }));
   }
 }

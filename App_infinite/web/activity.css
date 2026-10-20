@@ -1,0 +1,32 @@
+.discussion { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+.discussion-heading, .comment-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.discussion-heading { margin-bottom: 10px; }
+.discussion > .muted { margin: 12px 0; }
+.comment-entry { padding: 18px; margin: 14px 0; border: 1px solid var(--border); border-radius: 18px; background: var(--surface-low); scroll-margin-block: 100px; }
+.comment-entry.own { background: var(--soft); }
+.comment-entry.reply { margin-left: 24px; border-left: 3px solid var(--accent); }
+.comment-entry.highlighted, .comment-entry:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.reply-form { margin-top: 16px; }
+.comment-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
+.comment-heading time, .comment-heading small { font-size: 12px; color: var(--muted); }
+.comment-text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0; line-height: 1.6; }
+.activity-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 12px; }
+.comment-form { margin-top: 24px; }
+.comment-form textarea, .comment-entry textarea { width: 100%; min-height: 96px; resize: vertical; }
+.comment-form-footer { flex-wrap: wrap; }
+.inbox { display: grid; gap: 14px; max-width: 840px; margin: 0 auto; }
+.inbox-entry { display: flex; align-items: flex-start; gap: 18px; padding: 24px; }
+.inbox-entry.unread { border-left: 4px solid var(--accent); background: #fffafb; }
+.inbox-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 12px; background: var(--soft); color: var(--accent); }
+.inbox-body { min-width: 0; overflow-wrap: anywhere; }
+.inbox-body h2 { font-size: 18px; margin: 7px 0; }
+.inbox-body p { margin: 8px 0; }
+.inbox-body time { font-size: 12px; }
+.dialog .comment-text { max-height: 200px; overflow: auto; }
+@media (max-width: 600px) {
+  .comment-entry { padding: 14px; }
+  .comment-entry.reply { margin-left: 12px; }
+  .inbox-entry { padding: 18px 14px; gap: 12px; }
+  .inbox-icon { width: 30px; height: 30px; }
+  .comment-form-footer .button { width: 100%; }
+}

@@ -1,7 +1,9 @@
 # Infinite Plans Application Types
 
 Registering owns user identities. Authentication, sessions, groups,
-event publishing, and attendance marking all refer to those same users.
+event publishing, attendance marking, commenting, and notifying all refer to
+those same users. Commenting and Notifying use EventPublishing.Event as their
+opaque Subject; membership and event access stay in composition.
 
 Grouping owns group identities, and EventPublishing owns event identities.
 
@@ -24,4 +26,12 @@ instantiate EventPublishing with
 instantiate EventMarking with
   User is Registering.User
   Event is EventPublishing.Event
+
+instantiate Commenting with
+  User is Registering.User
+  Subject is EventPublishing.Event
+
+instantiate Notifying with
+  User is Registering.User
+  Subject is EventPublishing.Event
 ```

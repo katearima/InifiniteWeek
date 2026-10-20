@@ -13,6 +13,7 @@ afterEach(async () => {
   await cleanupDatabases();
 });
 import { routes } from "../compositions/expected.ts";
+import { samplePicture, pictureWithBytes } from "../support/picture.ts";
 const origin = "http://localhost:3000";
 const fields = { title: "Study", description: "MIT", start: "2000-01-01T10:00:00.000Z", end: "2000-01-01T11:00:00.000Z", location: "Library" };
 async function setup(configure?: (instances: ReturnType<typeof applicationConceptSet.implementations>) => void, requestTimeoutMs?: number) {
@@ -32,6 +33,22 @@ async function setup(configure?: (instances: ReturnType<typeof applicationConcep
   };
   return { host, database, instances, post, signup };
 }
+test("HTTP picture uploads accept the maximum image size, enforce ownership, and retain images after invalid replacements", async () => {
+  const { post, signup } = await setup();
+  const owner = await signup("picture-owner"), outsider = await signup("picture-outsider");
+  const { group } = await (await post("/groups/create", { name: "Pictures", description: "", policy: "OPEN" }, owner.cookie)).json();
+  const picture = pictureWithBytes(512 * 1024);
+  expect((await post("/groups/set-picture", { group, picture }, owner.cookie)).status).toBe(200);
+  expect(await (await post("/groups/picture", { group }, outsider.cookie)).json()).toEqual({ picture });
+  expect((await post("/groups/set-picture", { group, picture: samplePicture }, outsider.cookie)).status).toBe(403);
+  expect((await post("/groups/set-picture", { group, picture: pictureWithBytes(512 * 1024 + 1) }, owner.cookie)).status).toBe(400);
+  expect((await post("/groups/set-picture", { group, picture: "x".repeat(800 * 1024) }, owner.cookie)).status).toBe(400);
+  expect(await (await post("/groups/picture", { group }, owner.cookie)).json()).toEqual({ picture });
+  const hidden = await post("/groups/picture", { group });
+  expect(hidden.status).toBe(401);
+  expect(hidden.headers.get("cache-control")).toBe("no-store");
+});
+
 test("HTTP signup/login/logout use secure cookies and omit issued secrets", async () => {
   const { post } = await setup();
   const response = await post("/auth/register", { username: "maya", password: "correct-password" });

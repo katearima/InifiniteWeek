@@ -12,4 +12,4 @@ const server = Bun.serve({
   port: Number(process.env.PORT ?? 8080),
   routes: { "/": homepage, "/api/*": proxy, "/health": proxy },
 });
-console.log(`Infinite Plans frontend listening on ${server.url} (open http://localhost:${server.port})`);
+console.log(`InfiniteWeek frontend listening on ${server.url} (open http://localhost:${server.port})`);

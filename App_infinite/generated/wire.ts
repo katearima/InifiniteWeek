@@ -55,6 +55,75 @@ export type InfinitePlansWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PASSWORD" | "INVALID_USERNAME" | "PASSWORD_SET" | "USERNAME_TAKEN" };
   };
+  "/comments/edit": {
+    input: {
+      "comment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["revise"]>[0], ["comment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComment"]>[0], ["comment"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "text": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["revise"]>[0], ["text"]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["revise"]>[0], ["comment"]>>;
+    };
+    error: { error: AppWideError | "COMMENT_NOT_FOUND" | "INVALID_COMMENT_TEXT" | "INVALID_INPUT" | "NOT_COMMENT_AUTHOR" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
+  "/comments/list": {
+    input: {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "comments": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["commentPermissions"]["fn"]>[0], ["author"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["author"]>]>>;
+        "canEdit": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["commentPermissions"]["fn"]>>, ["canEdit"]>>;
+        "canRemove": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["commentPermissions"]["fn"]>>, ["canRemove"]>>;
+        "comment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["comment"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["createdAt"]>>;
+        "edited": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["edited"]>>;
+        "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["editedAt"]>>;
+        "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
+        "parent": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["parent"]>>;
+        "text": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["text"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+      })[];
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
+  "/comments/post": {
+    input: {
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "text": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["post"]>[0], ["text"]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["newCommentIdentity"]["fn"]>>, []>>;
+    } | {
+      "comment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["post"]>[0], ["comment"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["post"]>>, ["comment"]>]>>;
+    };
+    error: { error: AppWideError | "COMMENT_ALREADY_EXISTS" | "INVALID_COMMENT_TEXT" | "INVALID_INPUT" | "NOTIFICATION_ALREADY_EXISTS" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
+  "/comments/remove": {
+    input: {
+      "comment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["remove"]>[0], ["comment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComment"]>[0], ["comment"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["remove"]>[0], ["comment"]>>;
+    };
+    error: { error: AppWideError | "COMMENT_NOT_FOUND" | "INVALID_INPUT" | "NOT_COMMENT_MODERATOR" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
+  "/comments/reply": {
+    input: {
+      "comment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComment"]>[0], ["comment"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+      "text": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["reply"]>[0], ["text"]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["newCommentIdentity"]["fn"]>>, []>>;
+    } | {
+      "comment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["reply"]>[0], ["comment"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["reply"]>>, ["comment"]>]>>;
+    };
+    error: { error: AppWideError | "COMMENT_ALREADY_EXISTS" | "COMMENT_NOT_FOUND" | "INVALID_COMMENT_TEXT" | "INVALID_INPUT" | "NOTIFICATION_ALREADY_EXISTS" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
   "/events/attendees": {
     input: {
       "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
@@ -146,6 +215,16 @@ export type InfinitePlansWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SIGNED_IN" };
   };
+  "/events/picture": {
+    input: {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getPicture"]>[0], ["event"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "picture": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getPicture"]>>>, ["picture"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
   "/events/publish": {
     input: {
       "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["publish"]>[0], ["description"]>>;
@@ -163,28 +242,43 @@ export type InfinitePlansWire = {
   };
   "/events/remove": {
     input: {
-      "event": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["remove"]>[0], ["event"]>]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
     };
     output: {
-      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["remove"]>[0], ["event"]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
+    } | {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["remove"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
     };
-    error: { error: AppWideError | "EVENT_ALREADY_CANCELED" | "EVENT_NOT_FOUND_FOR_REMOVAL" | "INVALID_INPUT" | "NOT_EVENT_ORGANIZER" | "NOT_EVENT_ORGANIZER_FOR_REMOVAL" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "EVENT_ALREADY_CANCELED" | "EVENT_NOT_FOUND_FOR_REMOVAL" | "INVALID_INPUT" | "NOTIFICATION_ALREADY_EXISTS" | "NOT_EVENT_ORGANIZER" | "NOT_EVENT_ORGANIZER_FOR_REMOVAL" | "NOT_FOUND" | "NOT_SIGNED_IN" };
   };
   "/events/revise": {
     input: {
       "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["description"]>>;
       "end": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["eventDate"]["fn"]>[0], ["value"]>>;
-      "event": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["event"]>]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
       "location": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["location"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
       "start": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["eventDate"]["fn"]>[0], ["value"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["title"]>>;
     };
     output: {
-      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["event"]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
+    } | {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
     };
-    error: { error: AppWideError | "EVENT_CANCELED_FOR_REVISION" | "EVENT_NOT_FOUND_FOR_REVISION" | "INVALID_INPUT" | "INVALID_REVISION_TIME" | "NOT_EVENT_ORGANIZER" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "EVENT_CANCELED_FOR_REVISION" | "EVENT_NOT_FOUND_FOR_REVISION" | "INVALID_INPUT" | "INVALID_REVISION_TIME" | "NOTIFICATION_ALREADY_EXISTS" | "NOT_EVENT_ORGANIZER" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
+  "/events/set-picture": {
+    input: {
+      "event": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["setPicture"]>[0], ["event"]>]>>;
+      "picture": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["setPicture"]>[0], ["picture"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["setPicture"]>[0], ["event"]>>;
+    };
+    error: { error: AppWideError | "EVENT_CANCELED_FOR_REVISION" | "EVENT_NOT_FOUND_FOR_REVISION" | "INVALID_INPUT" | "INVALID_PICTURE" | "NOT_EVENT_ORGANIZER" | "NOT_FOUND" | "NOT_SIGNED_IN" };
   };
   "/groups/approve": {
     input: {
@@ -287,6 +381,16 @@ export type InfinitePlansWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_GROUP_MEMBER" | "NOT_SIGNED_IN" };
   };
+  "/groups/picture": {
+    input: {
+      "group": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getPicture"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupDetails"]>[0], ["group"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "picture": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getPicture"]>>>, ["picture"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
   "/groups/policy": {
     input: {
       "group": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["changePolicy"]>[0], ["group"]>>;
@@ -324,6 +428,62 @@ export type InfinitePlansWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "NOT_FOUND" | "NOT_GROUP_MEMBER" | "NOT_SIGNED_IN" };
   };
+  "/groups/set-picture": {
+    input: {
+      "group": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["setPicture"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupDetails"]>[0], ["group"]>]>>;
+      "picture": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["setPicture"]>[0], ["picture"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "group": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["setPicture"]>[0], ["group"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PICTURE" | "NOT_FOUND" | "NOT_GROUP_MEMBER" | "NOT_SIGNED_IN" | "PICTURE_GROUP_NOT_FOUND" | "PICTURE_NOT_MEMBER" };
+  };
+  "/notifications/dismiss": {
+    input: {
+      "notification": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotification"]>[0], ["notification"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["dismiss"]>[0], ["notification"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["dismiss"]>[0], ["notification"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
+  "/notifications/list": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "notifications": {
+        "comment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["target"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["createdAt"]>>;
+        "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["subject"]>]>>;
+        "message": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["message"]>>;
+        "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["notification"]>>;
+        "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["read"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>>>, ["title"]>>;
+      }[];
+      "unreadCount": number;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
+  "/notifications/read": {
+    input: {
+      "notification": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotification"]>[0], ["notification"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["markRead"]>[0], ["notification"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["markRead"]>[0], ["notification"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "NOTIFICATION_NOT_FOUND" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+  };
+  "/notifications/read-all": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
+    };
+    output: Record<string, never>;
+    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+  };
   "/plans/list": {
     input: {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
@@ -357,12 +517,15 @@ export type InfinitePlansWire = {
     output: {
       "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["event"]>>;
       "intent": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["intent"]>>;
+    } | {
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["event"]>>;
+      "intent": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["intent"]>>;
     };
     error: { error: AppWideError | "EVENT_CANCELED" | "INVALID_INPUT" | "NOT_FOUND" | "NOT_SIGNED_IN" };
   };
   "/plans/remove": {
     input: {
-      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["removeMark"]>[0], ["event"]>>;
+      "event": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["_isMarked"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["removeMark"]>[0], ["event"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["use"]>[0], ["session"]>>;
     };
     output: {
@@ -407,6 +570,70 @@ export type InfinitePlansWireHttp = {
       "user": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Sessioning"]["start"]>[0], ["subject"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" };
+  };
+  "/comments/edit": {
+    input: {
+      "comment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["revise"]>[0], ["comment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComment"]>[0], ["comment"]>]>>;
+      "text": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["revise"]>[0], ["text"]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["revise"]>[0], ["comment"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/comments/list": {
+    input: {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
+    };
+    output: {
+      "comments": ({
+        "author": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.computations)["commentPermissions"]["fn"]>[0], ["author"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["author"]>]>>;
+        "canEdit": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["commentPermissions"]["fn"]>>, ["canEdit"]>>;
+        "canRemove": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["commentPermissions"]["fn"]>>, ["canRemove"]>>;
+        "comment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["comment"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["createdAt"]>>;
+        "edited": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["edited"]>>;
+        "editedAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["editedAt"]>>;
+        "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>[0], ["subject"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
+        "parent": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["parent"]>>;
+        "text": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComments"]>>>, ["text"]>>;
+        "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Registering"]["_username"]>>>, ["username"]>> | null;
+      })[];
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/comments/post": {
+    input: {
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
+      "text": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["post"]>[0], ["text"]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["newCommentIdentity"]["fn"]>>, []>>;
+    } | {
+      "comment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["post"]>[0], ["comment"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["post"]>>, ["comment"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/comments/remove": {
+    input: {
+      "comment": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["remove"]>[0], ["comment"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComment"]>[0], ["comment"]>]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["remove"]>[0], ["comment"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/comments/reply": {
+    input: {
+      "comment": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["_getComment"]>[0], ["comment"]>>;
+      "text": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["reply"]>[0], ["text"]>>;
+    };
+    output: {
+      "comment": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.computations)["newCommentIdentity"]["fn"]>>, []>>;
+    } | {
+      "comment": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Commenting"]["reply"]>[0], ["comment"]>, AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Commenting"]["reply"]>>, ["comment"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/events/attendees": {
     input: {
@@ -494,6 +721,15 @@ export type InfinitePlansWireHttp = {
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
+  "/events/picture": {
+    input: {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getPicture"]>[0], ["event"]>]>>;
+    };
+    output: {
+      "picture": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getPicture"]>>>, ["picture"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
   "/events/publish": {
     input: {
       "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["publish"]>[0], ["description"]>>;
@@ -510,10 +746,12 @@ export type InfinitePlansWireHttp = {
   };
   "/events/remove": {
     input: {
-      "event": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["remove"]>[0], ["event"]>]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
     };
     output: {
-      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["remove"]>[0], ["event"]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
+    } | {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["remove"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
@@ -521,13 +759,25 @@ export type InfinitePlansWireHttp = {
     input: {
       "description": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["description"]>>;
       "end": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["eventDate"]["fn"]>[0], ["value"]>>;
-      "event": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["event"]>]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
       "location": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["location"]>>;
       "start": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.computations)["eventDate"]["fn"]>[0], ["value"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["title"]>>;
     };
     output: {
-      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["event"]>>;
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>>;
+    } | {
+      "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/events/set-picture": {
+    input: {
+      "event": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["setPicture"]>[0], ["event"]>]>>;
+      "picture": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["setPicture"]>[0], ["picture"]>>;
+    };
+    output: {
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["setPicture"]>[0], ["event"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
@@ -623,6 +873,15 @@ export type InfinitePlansWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
+  "/groups/picture": {
+    input: {
+      "group": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getPicture"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupDetails"]>[0], ["group"]>]>>;
+    };
+    output: {
+      "picture": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getPicture"]>>>, ["picture"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
   "/groups/policy": {
     input: {
       "group": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["changePolicy"]>[0], ["group"]>>;
@@ -657,6 +916,55 @@ export type InfinitePlansWireHttp = {
     };
     error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
+  "/groups/set-picture": {
+    input: {
+      "group": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["setPicture"]>[0], ["group"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["_getGroupDetails"]>[0], ["group"]>]>>;
+      "picture": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["setPicture"]>[0], ["picture"]>>;
+    };
+    output: {
+      "group": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Grouping"]["setPicture"]>[0], ["group"]>>;
+    };
+    error: { error: HttpAppWideError | "FORBIDDEN" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/notifications/dismiss": {
+    input: {
+      "notification": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotification"]>[0], ["notification"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["dismiss"]>[0], ["notification"]>]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["dismiss"]>[0], ["notification"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/notifications/list": {
+    input: Record<string, never>;
+    output: {
+      "notifications": {
+        "comment": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["target"]>>;
+        "createdAt": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["createdAt"]>>;
+        "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["subject"]>]>>;
+        "message": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["message"]>>;
+        "notification": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["notification"]>>;
+        "read": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotifications"]>>>, ["read"]>>;
+        "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>>>, ["title"]>>;
+      }[];
+      "unreadCount": number;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/notifications/read": {
+    input: {
+      "notification": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["_getNotification"]>[0], ["notification"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["markRead"]>[0], ["notification"]>]>>;
+    };
+    output: {
+      "notification": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Notifying"]["markRead"]>[0], ["notification"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/notifications/read-all": {
+    input: Record<string, never>;
+    output: Record<string, never>;
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
   "/plans/list": {
     input: Record<string, never>;
     output: {
@@ -687,12 +995,15 @@ export type InfinitePlansWireHttp = {
     output: {
       "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["event"]>>;
       "intent": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["intent"]>>;
+    } | {
+      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["event"]>>;
+      "intent": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["mark"]>[0], ["intent"]>>;
     };
     error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/plans/remove": {
     input: {
-      "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["removeMark"]>[0], ["event"]>>;
+      "event": Jsonify<OneOf<[AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["_isMarked"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["removeMark"]>[0], ["event"]>]>>;
     };
     output: {
       "event": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventMarking"]["removeMark"]>[0], ["event"]>>;

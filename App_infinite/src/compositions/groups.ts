@@ -3,7 +3,7 @@ import { each, form, former, no, where, whether } from "@mit-sdg/sync-engine/lan
 import { concepts } from "../concepts.ts";
 import { isMember, organizesActiveEvent } from "./access.ts";
 import { inputs } from "./reusable/inputs.ts";
-const { Registering, Sessioning, Grouping, EventPublishing, EventMarking } = concepts;
+const { Registering, Sessioning, Grouping, EventPublishing, EventMarking, Notifying } = concepts;
 
 export const summary = former("summary of (group) for (user)", ({ group, user }, { name, description, policy, member, pending }) =>
   where(
@@ -67,6 +67,7 @@ const Leave = endpoint("/groups/leave", ({ session, user, group, events }) => re
     where(isMember({ user, group }), organizesActiveEvent({ user, group })).then(respond({ error: "ACTIVE_EVENTS_PREVENT_LEAVING" })).named("organizer"),
     where(isMember({ user, group }), no(organizesActiveEvent({ user, group })),
       EventPublishing._getEventCollection({ group }).is({ events }))
+      .then(Notifying.clear({ user, subjects: events }).responds({}))
       .then(EventMarking.clearMarks({ user, events }).responds({}))
       .then(Grouping.leave({ user, group }).responds({})).then(respond({ group })).named("leave"),
   ), inputs({ group: "text" }));
@@ -77,7 +78,19 @@ const Delete = endpoint("/groups/delete", ({ session, user, group, events }) => 
     where(isMember({ user, group }), Grouping._isOnlyMember({ user, group }).is({ only: false })).then(respond({ error: "DELETE_NOT_LAST_MEMBER" })).named("shared"),
     where(Grouping._isOnlyMember({ user, group }).is({ only: true }), organizesActiveEvent({ user, group })).then(respond({ error: "ACTIVE_EVENTS_PREVENT_DELETION" })).named("organizer"),
     where(Grouping._isOnlyMember({ user, group }).is({ only: true }), no(organizesActiveEvent({ user, group })), EventPublishing._getEventCollection({ group }).is({ events }))
+      .then(Notifying.clear({ user, subjects: events }).responds({}))
       .then(EventMarking.clearMarks({ user, events }).responds({}))
       .then(Grouping.deleteGroup({ user, group }).responds({})).then(respond({ group })).named("delete"),
   ), inputs({ group: "text" }));
-export const composition = { Delete, List, Details, Members, Requests, Create, Join, Approve, Reject, ChangePolicy, Leave, summaries, summary, members, requests, eventRows };
+const Picture = endpoint("/groups/picture", ({ session, user, group, picture }) => receive({ session, group })
+  .then(Sessioning.use({ session }).responds({ subject: user })).then(
+    where(Grouping._getPicture({ group }).is({ picture })).then(respond({ picture })).named("found"),
+    where(no(Grouping._getGroupDetails({ group }))).then(respond({ error: "NOT_FOUND" })).named("missing"),
+  ), inputs({ group: "text" }));
+const SetPicture = endpoint("/groups/set-picture", ({ session, user, group, picture }) => receive({ session, group, picture })
+  .then(Sessioning.use({ session }).responds({ subject: user })).then(
+    where(isMember({ user, group })).then(Grouping.setPicture({ user, group, picture }).responds({})).then(respond({ group })).named("member"),
+    where(Grouping._getGroupDetails({ group }), no(isMember({ user, group }))).then(respond({ error: "NOT_GROUP_MEMBER" })).named("outsider"),
+    where(no(Grouping._getGroupDetails({ group }))).then(respond({ error: "NOT_FOUND" })).named("missing"),
+  ), inputs({ group: "text", picture: "text" }));
+export const composition = { Picture, SetPicture, Delete, List, Details, Members, Requests, Create, Join, Approve, Reject, ChangePolicy, Leave, summaries, summary, members, requests, eventRows };

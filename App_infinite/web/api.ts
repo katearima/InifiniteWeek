@@ -6,6 +6,8 @@ export type Group = Wire["/groups/list"]["output"]["groups"][number];
 export type EventRow = Wire["/events/details"]["output"]["event"];
 export type Person = Wire["/groups/members"]["output"]["members"][number];
 export type Intent = Wire["/plans/mark"]["input"]["intent"];
+export type CommentRow = Wire["/comments/list"]["output"]["comments"][number];
+export type NotificationRow = Wire["/notifications/list"]["output"]["notifications"][number];
 export class ApiError extends Error {
   constructor(public code: string, message: string) { super(message); }
 }

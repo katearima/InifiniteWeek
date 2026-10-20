@@ -1,5 +1,11 @@
 # Personal plans
 
+The cleanup ordering in [notifications](notifications.md) extends Mark for
+NOT_GOING and Remove: validate existing permissions/refusals, clear that user's
+notices for the event, then change/remove the mark. Failure during cleanup
+prevents marking; later failure leaves notices cleared. GOING/INTERESTED
+transitions preserve notices. Re-saving restores no cleared entries.
+
 All endpoints follow [accounts](reusable/accounts.md), take their acting user
 from the session, and share its serialized execution boundary. EventMarking owns
 intentions; EventPublishing owns event details and cancellation. No copy of

@@ -7,7 +7,7 @@ const selected = routes;
 test("selected endpoint inventory and required/default contracts match authored routes without database access", () => {
   const application = config.assemble();
   expect(Object.keys(application.publicInterface.routes).sort()).toEqual(Object.keys(selected).sort());
-  expect(Object.keys(selected)).toHaveLength(25);
+  expect(Object.keys(selected)).toHaveLength(38);
   for (const [path, required] of Object.entries(selected)) {
     const contract = application.publicInterface.routes[path]!;
     expect([...(contract.required ?? [])].sort()).toEqual([...required, ...(["/auth/register", "/auth/login"].includes(path) ? [] : ["session"])].sort());
@@ -35,17 +35,19 @@ test("all selected routes reject acting-user overrides and missing required fiel
       expect(await app.invoker.invoke(path, input)).toEqual({ ok: false, error: { kind: "domain", value: "NOT_SIGNED_IN" } });
     }
   }
-  expect(calls).toBe(23); // Only the well-shaped missing-session calls reach Sessioning.
+  expect(calls).toBe(36);
 });
 
-test("generated read-back contains the exact five views and eleven flat formers", async () => {
+test("generated read-back contains the selected flat views and formers", async () => {
   const readback = await Bun.file(new URL("../../generated/infinite-plans.md", import.meta.url)).text();
   const paths = (section: string) => [...section.matchAll(/Authored path: `([^`]+)`/g)].map(match => match[1]).sort();
   expect(paths(readback.split("## Views\n")[1]!.split("## Formers\n")[0]!)).toEqual([
     "access.canManageEvent", "access.canMarkEvent", "access.canReadEvent", "access.isMember", "access.organizesActiveEvent",
+    "comments.canRead", "comments.canEdit", "comments.canRemove", "notifications.recipients", "notifications.commentRecipients",
   ].sort());
   expect(paths(readback.split("## Formers\n")[1]!.split("## Reactions\n")[0]!)).toEqual([
     "groups.summaries", "groups.summary", "groups.members", "groups.requests", "groups.eventRows",
     "events.details", "events.exploreRows", "events.groupRows", "events.going", "events.interested", "plans.savedEvents",
+    "comments.rows", "notifications.rows", "notifications.unread",
   ].sort());
 });

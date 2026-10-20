@@ -26,8 +26,40 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 #### Instances
 
-- `Authenticating` — instance of `Authenticating` — [Infinite Plans Application Types](../design/types.md), line 11.
-  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 12.
+- `Authenticating` — instance of `Authenticating` — [Infinite Plans Application Types](../design/types.md), line 13.
+  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 14.
+
+### Commenting
+
+Defined in [Commenting](../design/concepts/Commenting.md), line 1.
+
+#### Actions
+
+- `post(author: User, subject: Subject, text: String, comment: Comment, at: DateTime) : returns (comment: Comment)`
+  - Refuses `COMMENT_ALREADY_EXISTS`: This comment identity is already in use.
+  - Refuses `INVALID_COMMENT_TEXT`: Write a comment of 1 to 2000 characters.
+- `reply(author: User, parent: Comment, text: String, comment: Comment, at: DateTime) : returns (comment: Comment)`
+  - Refuses `COMMENT_ALREADY_EXISTS`: This comment identity is already in use.
+  - Refuses `COMMENT_NOT_FOUND`: There is no such comment.
+  - Refuses `INVALID_COMMENT_TEXT`: Write a comment of 1 to 2000 characters.
+- `revise(user: User, comment: Comment, text: String, at: DateTime) : returns ()`
+  - Refuses `COMMENT_NOT_FOUND`: There is no such comment.
+  - Refuses `NOT_COMMENT_AUTHOR`: Only the author can edit this comment.
+  - Refuses `INVALID_COMMENT_TEXT`: Write a comment of 1 to 2000 characters.
+- `remove(comment: Comment) : returns ()`
+  - Refuses `COMMENT_NOT_FOUND`: There is no such comment.
+
+#### Queries
+
+- `_removalTargets(comment: Comment) : one (comments: CommentCollection)`
+- `_getComment(comment: Comment) : optional (author: User, subject: Subject, text: String, createdAt: DateTime, edited: Flag, editedAt: DateTime, parent: String)`
+- `_getComments(subject: Subject) : many (comment: Comment, author: User, text: String, createdAt: DateTime, edited: Flag, editedAt: DateTime, parent: String)`
+
+#### Instances
+
+- `Commenting` — instance of `Commenting` — [Infinite Plans Application Types](../design/types.md), line 30.
+  - `Subject` is `EventPublishing.Event` — [Infinite Plans Application Types](../design/types.md), line 32.
+  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 31.
 
 ### EventMarking
 
@@ -51,9 +83,9 @@ Defined in [EventMarking](../design/concepts/EventMarking.md), line 1.
 
 #### Instances
 
-- `EventMarking` — instance of `EventMarking` — [Infinite Plans Application Types](../design/types.md), line 24.
-  - `Event` is `EventPublishing.Event` — [Infinite Plans Application Types](../design/types.md), line 26.
-  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 25.
+- `EventMarking` — instance of `EventMarking` — [Infinite Plans Application Types](../design/types.md), line 26.
+  - `Event` is `EventPublishing.Event` — [Infinite Plans Application Types](../design/types.md), line 28.
+  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 27.
 
 ### EventPublishing
 
@@ -63,11 +95,16 @@ Defined in [EventPublishing](../design/concepts/EventPublishing.md), line 1.
 
 - `publish(organizer: User, group: Group, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns (event: Event)`
   - Refuses `INVALID_PUBLICATION_TIME`: The event must start before it ends.
-- `revise(user: User, event: Event, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns ()`
+- `revise(user: User, event: Event, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns (timeOrLocationChanged: Flag)`
   - Refuses `EVENT_NOT_FOUND_FOR_REVISION`: There is no such event to revise.
   - Refuses `NOT_EVENT_ORGANIZER`: Only the event's organizer can revise it.
   - Refuses `EVENT_CANCELED_FOR_REVISION`: A canceled event cannot be revised.
   - Refuses `INVALID_REVISION_TIME`: The event must start before it ends.
+- `setPicture(user: User, event: Event, picture: String) : returns ()`
+  - Refuses `EVENT_NOT_FOUND_FOR_REVISION`: There is no such event to revise.
+  - Refuses `NOT_EVENT_ORGANIZER`: Only the event's organizer can revise it.
+  - Refuses `EVENT_CANCELED_FOR_REVISION`: A canceled event cannot be revised.
+  - Refuses `INVALID_PICTURE`: Choose a supported picture of at most 512 KiB after resizing.
 - `remove(user: User, event: Event) : returns ()`
   - Refuses `EVENT_NOT_FOUND_FOR_REMOVAL`: There is no such event to remove.
   - Refuses `NOT_EVENT_ORGANIZER_FOR_REMOVAL`: Only the event's organizer can remove it.
@@ -75,6 +112,7 @@ Defined in [EventPublishing](../design/concepts/EventPublishing.md), line 1.
 
 #### Queries
 
+- `_getPicture(event: Event) : optional (picture: String)`
 - `_getEventDetails(event: Event) : optional (organizer: User, group: Group, title: String, description: String, start: DateTime, end: DateTime, location: String, canceled: Flag, timeChanged: Flag, previousStart: DateTime, previousEnd: DateTime)`
 - `_getEventsByOrganizer(organizer: User) : many (event: Event)`
 - `_getEventCollection(group: Group) : one (events: EventCollection)`
@@ -82,9 +120,9 @@ Defined in [EventPublishing](../design/concepts/EventPublishing.md), line 1.
 
 #### Instances
 
-- `EventPublishing` — instance of `EventPublishing` — [Infinite Plans Application Types](../design/types.md), line 20.
-  - `Group` is `Grouping.Group` — [Infinite Plans Application Types](../design/types.md), line 22.
-  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 21.
+- `EventPublishing` — instance of `EventPublishing` — [Infinite Plans Application Types](../design/types.md), line 22.
+  - `Group` is `Grouping.Group` — [Infinite Plans Application Types](../design/types.md), line 24.
+  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 23.
 
 ### Grouping
 
@@ -112,12 +150,17 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
   - Refuses `DELETE_GROUP_NOT_FOUND`: There is no such group to delete.
   - Refuses `DELETE_NOT_MEMBER`: Only a member can delete the group.
   - Refuses `DELETE_NOT_LAST_MEMBER`: Only the last member can delete the group.
+- `setPicture(user: User, group: Group, picture: String) : returns ()`
+  - Refuses `PICTURE_GROUP_NOT_FOUND`: There is no such group.
+  - Refuses `PICTURE_NOT_MEMBER`: Only a group member can change its picture.
+  - Refuses `INVALID_PICTURE`: Choose a supported picture of at most 512 KiB after resizing.
 - `changePolicy(user: User, group: Group, policy: JoiningPolicy) : returns ()`
   - Refuses `POLICY_GROUP_NOT_FOUND`: There is no such group.
   - Refuses `POLICY_NOT_MEMBER`: Only a group member can change its joining policy.
 
 #### Queries
 
+- `_getPicture(group: Group) : optional (picture: String)`
 - `_getGroupDetails(group: Group) : optional (name: String, description: String, policy: JoiningPolicy)`
 - `_getGroups() : many (group: Group, name: String, description: String, policy: JoiningPolicy)`
 - `_getMembers(group: Group) : many (user: User)`
@@ -129,8 +172,35 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 
 #### Instances
 
-- `Grouping` — instance of `Grouping` — [Infinite Plans Application Types](../design/types.md), line 17.
-  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 18.
+- `Grouping` — instance of `Grouping` — [Infinite Plans Application Types](../design/types.md), line 19.
+  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 20.
+
+### Notifying
+
+Defined in [Notifying](../design/concepts/Notifying.md), line 1.
+
+#### Actions
+
+- `send(user: User, subject: Subject, message: String, notification: Notification, at: DateTime, target?: String) : returns (notification: Notification)`
+  - Refuses `NOTIFICATION_ALREADY_EXISTS`: This notification identity is already in use.
+- `markRead(user: User, notification: Notification) : returns ()`
+  - Refuses `NOTIFICATION_NOT_FOUND`: There is no such notification.
+- `markAllRead(user: User) : returns ()`
+- `dismiss(user: User, notification: Notification) : returns ()`
+  - Refuses `NOTIFICATION_NOT_FOUND`: There is no such notification.
+- `clearTargets(targets: TargetCollection) : returns ()`
+- `clear(user: User, subjects: SubjectCollection) : returns ()`
+
+#### Queries
+
+- `_getNotifications(user: User) : many (notification: Notification, subject: Subject, message: String, createdAt: DateTime, read: Flag, target: String)`
+- `_getNotification(user: User, notification: Notification) : optional (subject: Subject, message: String, createdAt: DateTime, read: Flag, target: String)`
+
+#### Instances
+
+- `Notifying` — instance of `Notifying` — [Infinite Plans Application Types](../design/types.md), line 34.
+  - `Subject` is `EventPublishing.Event` — [Infinite Plans Application Types](../design/types.md), line 36.
+  - `User` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 35.
 
 ### Registering
 
@@ -149,7 +219,7 @@ Defined in [Registering](../design/concepts/Registering.md), line 1.
 
 #### Instances
 
-- `Registering` — instance of `Registering` — [Infinite Plans Application Types](../design/types.md), line 9.
+- `Registering` — instance of `Registering` — [Infinite Plans Application Types](../design/types.md), line 11.
 
 ### Sessioning
 
@@ -165,14 +235,18 @@ Defined in [Sessioning](../design/concepts/Sessioning.md), line 1.
 
 #### Instances
 
-- `Sessioning` — instance of `Sessioning` — [Infinite Plans Application Types](../design/types.md), line 14.
-  - `Subject` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 15.
+- `Sessioning` — instance of `Sessioning` — [Infinite Plans Application Types](../design/types.md), line 16.
+  - `Subject` is `Registering.User` — [Infinite Plans Application Types](../design/types.md), line 17.
 
 ## Computations
 
-- `eventDate(value: Json) : DateTime` — [Events](../design/compositions/events.md), line 101.
-- `eventSortKey(start: DateTime, event: String) : String` — [Events](../design/compositions/events.md), line 27.
-- `requireEventGroup(group: String) : String` — [Personal plans](../design/compositions/plans.md), line 61.
+- `commentPermissions(user: String, author: String, organizer: String) : Json` — [Event comments](../design/compositions/comments.md), line 26.
+- `eventDate(value: Json) : DateTime` — [Events](../design/compositions/events.md), line 149.
+- `eventSortKey(start: DateTime, event: String) : String` — [Events](../design/compositions/events.md), line 66.
+- `eventSubjects(event: String) : Json` — [In-app notifications](../design/compositions/notifications.md), line 63.
+- `newCommentIdentity() : String` — [Event comments](../design/compositions/comments.md), line 23.
+- `newIdentity() : String` — [Event comments](../design/compositions/comments.md), line 20.
+- `requireEventGroup(group: String) : String` — [Personal plans](../design/compositions/plans.md), line 67.
 
 ## Views
 
@@ -192,8 +266,8 @@ Authored path: `access.isMember`.
 
 Authored path: `access.canReadEvent`.
 - Covered by [Access policies](../design/compositions/access.md), line 12.
-- Covered by [Events](../design/compositions/events.md), line 11.
-- Covered by [Personal plans](../design/compositions/plans.md), line 17.
+- Covered by [Events](../design/compositions/events.md), line 50.
+- Covered by [Personal plans](../design/compositions/plans.md), line 23.
 
 ```view
 (user) can read (event) — inputs (user, event); outputs (); bindings (group)
@@ -202,11 +276,35 @@ Authored path: `access.canReadEvent`.
     view "(user) belongs to (group)" with (group, user)
 ```
 
+### (user) can read comment (comment)
+
+Authored path: `comments.canRead`.
+- Covered by [Event comments](../design/compositions/comments.md), line 6.
+
+```view
+(user) can read comment (comment) — inputs (user, comment); outputs (); bindings (event)
+  where
+    Commenting._getComment (comment) has (subject: event)
+    view "(user) can read (event)" with (event, user)
+```
+
+### (user) can edit comment (comment)
+
+Authored path: `comments.canEdit`.
+- Covered by [Event comments](../design/compositions/comments.md), line 8.
+
+```view
+(user) can edit comment (comment) — inputs (user, comment); outputs (); bindings ()
+  where
+    view "(user) can read comment (comment)" with (comment, user)
+    Commenting._getComment (comment) has (author: user)
+```
+
 ### (user) can manage (event)
 
 Authored path: `access.canManageEvent`.
 - Covered by [Access policies](../design/compositions/access.md), line 17.
-- Covered by [Events](../design/compositions/events.md), line 57.
+- Covered by [Events](../design/compositions/events.md), line 96.
 
 ```view
 (user) can manage (event) — inputs (user, event); outputs (); bindings ()
@@ -219,7 +317,7 @@ Authored path: `access.canManageEvent`.
 
 Authored path: `access.canMarkEvent`.
 - Covered by [Access policies](../design/compositions/access.md), line 22.
-- Covered by [Personal plans](../design/compositions/plans.md), line 11.
+- Covered by [Personal plans](../design/compositions/plans.md), line 17.
 
 ```view
 (user) can mark (event) — inputs (user, event); outputs (); bindings ()
@@ -228,11 +326,26 @@ Authored path: `access.canMarkEvent`.
     EventPublishing._getEventDetails (event) has (canceled: false)
 ```
 
+### (user) can remove comment (comment)
+
+Authored path: `comments.canRemove`.
+- Covered by [Event comments](../design/compositions/comments.md), line 9.
+
+```view
+(user) can remove comment (comment) — inputs (user, comment); outputs (); bindings (event)
+  where
+    view "(user) can read comment (comment)" with (comment, user)
+    Commenting._getComment (comment) has (author: user)
+  where
+    Commenting._getComment (comment) has (subject: event)
+    view "(user) can manage (event)" with (event, user)
+```
+
 ### (user) organizes an active event in (group)
 
 Authored path: `access.organizesActiveEvent`.
 - Covered by [Access policies](../design/compositions/access.md), line 27.
-- Covered by [Groups](../design/compositions/groups.md), line 75.
+- Covered by [Groups](../design/compositions/groups.md), line 109.
 
 ```view
 (user) organizes an active event in (group) — inputs (user, group); outputs (); bindings (event)
@@ -241,15 +354,70 @@ Authored path: `access.organizesActiveEvent`.
     EventPublishing._getEventDetails (event) has (canceled: false, organizer: user)
 ```
 
+### notification recipients for (event) excluding (organizer)
+
+Authored path: `notifications.recipients`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 16.
+
+```view
+notification recipients for (event) excluding (organizer) — inputs (event, organizer); outputs (user); bindings (group, intent) — answers any number of (user)
+  where
+    EventPublishing._getEventDetails (event) has (group, organizer)
+    EventMarking._getMarksByEvent (event) has (intent, user)
+    intent is among ["GOING", "INTERESTED"]
+    no EventPublishing._getEventDetails (event) has (organizer: user)
+    view "(user) belongs to (group)" with (group, user)
+```
+
+### recipients of comment (comment) on (event)
+
+Authored path: `notifications.commentRecipients`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 81.
+
+```view
+recipients of comment (comment) on (event) — inputs (event, comment); outputs (user); bindings (group) — answers any number of (user)
+  where
+    EventPublishing._getEventDetails (event) has (group)
+    EventMarking._getMarksByEvent (event) has (intent: "GOING", user)
+    Commenting._getComment (comment) and not (author: user)
+    view "(user) belongs to (group)" with (group, user)
+```
+
 ## Formers
 
 _Formers name result shapes evaluated when asked. The source former owns_
 _the authored explanation; this section records the generated shape._
 
+### comments on (event) for (user)
+
+Authored path: `comments.rows`.
+- Covered by [Event comments](../design/compositions/comments.md), line 33.
+
+```former
+Former "comments on (event) for (user)" — inputs (user, event); bindings (comment, parent, author, username, text, createdAt, edited, editedAt, organizer, canEdit, canRemove); promises exactly one record — forms:
+  each Commenting._getComments (subject: event) has (author, comment, createdAt, edited, editedAt, parent, text)
+    where view "(user) can read (event)" with (event, user)
+    where EventPublishing._getEventDetails (event) has (organizer)
+    where whether Registering._username (user: author) has (username)
+    where (canEdit, canRemove) is commentPermissions (author, organizer, user)
+    form a record of
+      author
+      canEdit
+      canRemove
+      comment
+      createdAt
+      edited
+      editedAt
+      event
+      parent
+      text
+      username
+```
+
 ### details of (event) for (user)
 
 Authored path: `events.details`.
-- Covered by [Events](../design/compositions/events.md), line 10.
+- Covered by [Events](../design/compositions/events.md), line 49.
 
 ```former
 Former "details of (event) for (user)" — inputs (user, event); bindings (organizer, organizerUsername, group, title, description, start, end, location, canceled, timeChanged, previousStart, previousEnd, intent); promises exactly one record — forms:
@@ -276,7 +444,7 @@ Former "details of (event) for (user)" — inputs (user, event); bindings (organ
 ### event identities in (group)
 
 Authored path: `groups.eventRows`.
-- Covered by [Groups](../design/compositions/groups.md), line 86.
+- Covered by [Groups](../design/compositions/groups.md), line 120.
 
 ```former
 Former "event identities in (group)" — inputs (group); bindings (event); promises exactly one record — forms:
@@ -289,7 +457,7 @@ Former "event identities in (group)" — inputs (group); bindings (event); promi
 ### events in (group) for (user)
 
 Authored path: `events.groupRows`.
-- Covered by [Events](../design/compositions/events.md), line 20.
+- Covered by [Events](../design/compositions/events.md), line 59.
 
 ```former
 Former "events in (group) for (user)" — inputs (user, group); bindings (event, start, order); promises exactly one record — forms:
@@ -306,7 +474,7 @@ Former "events in (group) for (user)" — inputs (user, group); bindings (event,
 ### explorable events for (user)
 
 Authored path: `events.exploreRows`.
-- Covered by [Events](../design/compositions/events.md), line 18.
+- Covered by [Events](../design/compositions/events.md), line 57.
 
 ```former
 Former "explorable events for (user)" — inputs (user); bindings (group, event, start, order); promises exactly one record — forms:
@@ -323,7 +491,7 @@ Former "explorable events for (user)" — inputs (user); bindings (group, event,
 ### going attendees of (event) for (user)
 
 Authored path: `events.going`.
-- Covered by [Events](../design/compositions/events.md), line 83.
+- Covered by [Events](../design/compositions/events.md), line 131.
 
 ```former
 Former "going attendees of (event) for (user)" — inputs (user, event); bindings (person, username, group); promises exactly one record — forms:
@@ -340,7 +508,7 @@ Former "going attendees of (event) for (user)" — inputs (user, event); binding
 ### summary of (group) for (user)
 
 Authored path: `groups.summary`.
-- Covered by [Groups](../design/compositions/groups.md), line 18.
+- Covered by [Groups](../design/compositions/groups.md), line 52.
 
 ```former
 Former "summary of (group) for (user)" — inputs (group, user); bindings (name, description, policy, member, pending); promises exactly one record — forms:
@@ -359,7 +527,7 @@ Former "summary of (group) for (user)" — inputs (group, user); bindings (name,
 ### group summaries for (user)
 
 Authored path: `groups.summaries`.
-- Covered by [Groups](../design/compositions/groups.md), line 11.
+- Covered by [Groups](../design/compositions/groups.md), line 45.
 
 ```former
 Former "group summaries for (user)" — inputs (user); bindings (group); promises exactly one record — forms:
@@ -368,10 +536,30 @@ Former "group summaries for (user)" — inputs (user); bindings (group); promise
       … former "summary of (group) for (user)" with (group, user)
 ```
 
+### inbox for (user)
+
+Authored path: `notifications.rows`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 35.
+
+```former
+Former "inbox for (user)" — inputs (user); bindings (notification, event, message, createdAt, read, title, comment); promises exactly one record — forms:
+  each Notifying._getNotifications (user) has (createdAt, message, notification, read, subject: event, target: comment)
+    where view "(user) can read (event)" with (event, user)
+    where EventPublishing._getEventDetails (event) has (title)
+    form a record of
+      comment
+      createdAt
+      event
+      message
+      notification
+      read
+      title
+```
+
 ### interested attendees of (event) for (user)
 
 Authored path: `events.interested`.
-- Covered by [Events](../design/compositions/events.md), line 84.
+- Covered by [Events](../design/compositions/events.md), line 132.
 
 ```former
 Former "interested attendees of (event) for (user)" — inputs (user, event); bindings (person, username, group); promises exactly one record — forms:
@@ -388,7 +576,7 @@ Former "interested attendees of (event) for (user)" — inputs (user, event); bi
 ### members of (group) for (user)
 
 Authored path: `groups.members`.
-- Covered by [Groups](../design/compositions/groups.md), line 25.
+- Covered by [Groups](../design/compositions/groups.md), line 59.
 
 ```former
 Former "members of (group) for (user)" — inputs (user, group); bindings (person, username); promises exactly one record — forms:
@@ -403,7 +591,7 @@ Former "members of (group) for (user)" — inputs (user, group); bindings (perso
 ### requests for (group) seen by (user)
 
 Authored path: `groups.requests`.
-- Covered by [Groups](../design/compositions/groups.md), line 26.
+- Covered by [Groups](../design/compositions/groups.md), line 60.
 
 ```former
 Former "requests for (group) seen by (user)" — inputs (user, group); bindings (person, username); promises exactly one record — forms:
@@ -418,7 +606,7 @@ Former "requests for (group) seen by (user)" — inputs (user, group); bindings 
 ### saved events for (user)
 
 Authored path: `plans.savedEvents`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 30.
+- Covered by [Personal plans](../design/compositions/plans.md), line 36.
 
 ```former
 Former "saved events for (user)" — inputs (user); bindings (event, group, referencedGroup, start, order); promises exactly one record — forms:
@@ -430,6 +618,17 @@ Former "saved events for (user)" — inputs (user); bindings (event, group, refe
     arranged by order
     form a record of
       … former "details of (event) for (user)" with (event, user)
+```
+
+### unread inbox total for (user)
+
+Authored path: `notifications.unread`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 38.
+
+```former
+Former "unread inbox total for (user)" — inputs (user); bindings (notification, event); promises exactly one record — forms:
+  the count of Notifying._getNotifications (user) has (notification, read: false, subject: event)
+    where view "(user) can read (event)" with (event, user)
 ```
 
 ## Reactions
@@ -522,11 +721,375 @@ then
   RequestBoundary.respond (requestId)
 ```
 
+### comments.Edit
+
+Authored path: `comments.Edit`.
+- Covered by [Event comments](../design/compositions/comments.md), line 49.
+- Covered by [Event comments](../design/compositions/comments.md), line 77.
+
+```reaction
+when RequestBoundary.request (comment, path: "/comments/edit", requestId, session, text)
+then
+  Sessioning.use (session)
+```
+
+### comments.Edit:author#2
+
+Authored path: `comments.Edit`.
+- Covered by [Event comments](../design/compositions/comments.md), line 49.
+- Covered by [Event comments](../design/compositions/comments.md), line 77.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Edit
+where
+  at is the current flow's instant
+  earlier, RequestBoundary.request (comment, path: "/comments/edit", requestId, session, text)
+  view "(user) can edit comment (comment)" with (comment, user)
+then
+  Commenting.revise (at, comment, text, user)
+```
+
+### comments.Edit:author#3
+
+Authored path: `comments.Edit`.
+- Covered by [Event comments](../design/compositions/comments.md), line 49.
+- Covered by [Event comments](../design/compositions/comments.md), line 77.
+
+```reaction
+when Commenting.revise (at, comment, text, user), asked by comments.Edit:author#2
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/edit", requestId, session, text)
+then
+  RequestBoundary.respond (comment, requestId)
+```
+
+### comments.Edit:hidden#2
+
+Authored path: `comments.Edit`.
+- Covered by [Event comments](../design/compositions/comments.md), line 49.
+- Covered by [Event comments](../design/compositions/comments.md), line 77.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Edit
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/edit", requestId, session, text)
+  no view "(user) can read comment (comment)" with (comment, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### comments.Edit:other#2
+
+Authored path: `comments.Edit`.
+- Covered by [Event comments](../design/compositions/comments.md), line 49.
+- Covered by [Event comments](../design/compositions/comments.md), line 77.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Edit
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/edit", requestId, session, text)
+  view "(user) can read comment (comment)" with (comment, user)
+  no view "(user) can edit comment (comment)" with (comment, user)
+then
+  RequestBoundary.respond (error: "NOT_COMMENT_AUTHOR", requestId)
+```
+
+### comments.List
+
+Authored path: `comments.List`.
+- Covered by [Event comments](../design/compositions/comments.md), line 38.
+- Covered by [Event comments](../design/compositions/comments.md), line 74.
+
+```reaction
+when RequestBoundary.request (event, path: "/comments/list", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### comments.List:hidden#2
+
+Authored path: `comments.List`.
+- Covered by [Event comments](../design/compositions/comments.md), line 38.
+- Covered by [Event comments](../design/compositions/comments.md), line 74.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.List
+where
+  earlier, RequestBoundary.request (event, path: "/comments/list", requestId, session)
+  no view "(user) can read (event)" with (event, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### comments.List:readable#2
+
+Authored path: `comments.List`.
+- Covered by [Event comments](../design/compositions/comments.md), line 38.
+- Covered by [Event comments](../design/compositions/comments.md), line 74.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.List
+where
+  earlier, RequestBoundary.request (event, path: "/comments/list", requestId, session)
+  view "(user) can read (event)" with (event, user)
+then
+  RequestBoundary.respond (comments: former "comments on (event) for (user)" with (event, user), requestId)
+```
+
+### comments.Post
+
+Authored path: `comments.Post`.
+- Covered by [Event comments](../design/compositions/comments.md), line 40.
+- Covered by [Event comments](../design/compositions/comments.md), line 75.
+
+```reaction
+when RequestBoundary.request (event, path: "/comments/post", requestId, session, text)
+where
+  at is the current flow's instant
+  comment is newCommentIdentity
+then
+  Sessioning.use (session)
+```
+
+### comments.Post:hidden#2
+
+Authored path: `comments.Post`.
+- Covered by [Event comments](../design/compositions/comments.md), line 40.
+- Covered by [Event comments](../design/compositions/comments.md), line 75.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Post
+where
+  earlier, RequestBoundary.request (event, path: "/comments/post", requestId, session, text)
+  no view "(user) can read (event)" with (event, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### comments.Post:hidden#3
+
+Authored path: `comments.Post`.
+- Covered by [Event comments](../design/compositions/comments.md), line 40.
+- Covered by [Event comments](../design/compositions/comments.md), line 75.
+
+```reaction
+when RequestBoundary.respond (error: "NOT_FOUND", requestId), asked by comments.Post:hidden#2
+at the flow's settlement frontier
+where
+  earlier, Sessioning.use (session, subject: user), asked by comments.Post
+  earlier, RequestBoundary.request (event, path: "/comments/post", requestId, session, text)
+  view "(user) can read (event)" with (event, user)
+  comment is newCommentIdentity
+then
+  RequestBoundary.respond (comment, requestId)
+```
+
+### comments.Post:readable#2
+
+Authored path: `comments.Post`.
+- Covered by [Event comments](../design/compositions/comments.md), line 40.
+- Covered by [Event comments](../design/compositions/comments.md), line 75.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Post
+where
+  earlier, RequestBoundary.request (event, path: "/comments/post", requestId, session, text)
+  view "(user) can read (event)" with (event, user)
+  at is the current flow's instant
+  comment is newCommentIdentity
+then
+  Commenting.post (at, author: user, comment, subject: event, text)
+```
+
+### comments.Post:readable#3
+
+Authored path: `comments.Post`.
+- Covered by [Event comments](../design/compositions/comments.md), line 40.
+- Covered by [Event comments](../design/compositions/comments.md), line 75.
+
+```reaction
+when Commenting.post (at, author: user, comment, subject: event, text), asked by comments.Post:readable#2
+at the flow's settlement frontier
+where
+  view "(user) can read (event)" with (event, user)
+  earlier, RequestBoundary.request (event, path: "/comments/post", requestId, session, text)
+then
+  RequestBoundary.respond (comment, requestId)
+```
+
+### comments.Remove
+
+Authored path: `comments.Remove`.
+- Covered by [Event comments](../design/compositions/comments.md), line 51.
+- Covered by [Event comments](../design/compositions/comments.md), line 78.
+
+```reaction
+when RequestBoundary.request (comment, path: "/comments/remove", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### comments.Remove:allowed#2
+
+Authored path: `comments.Remove`.
+- Covered by [Event comments](../design/compositions/comments.md), line 51.
+- Covered by [Event comments](../design/compositions/comments.md), line 78.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Remove
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/remove", requestId, session)
+  view "(user) can remove comment (comment)" with (comment, user)
+  Commenting._removalTargets (comment) has (comments: targets)
+then
+  Notifying.clearTargets (targets)
+```
+
+### comments.Remove:allowed#3
+
+Authored path: `comments.Remove`.
+- Covered by [Event comments](../design/compositions/comments.md), line 51.
+- Covered by [Event comments](../design/compositions/comments.md), line 78.
+
+```reaction
+when Notifying.clearTargets (targets), asked by comments.Remove:allowed#2
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/remove", requestId, session)
+then
+  Commenting.remove (comment)
+```
+
+### comments.Remove:allowed#4
+
+Authored path: `comments.Remove`.
+- Covered by [Event comments](../design/compositions/comments.md), line 51.
+- Covered by [Event comments](../design/compositions/comments.md), line 78.
+
+```reaction
+when Commenting.remove (comment), asked by comments.Remove:allowed#3
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/remove", requestId, session)
+then
+  RequestBoundary.respond (comment, requestId)
+```
+
+### comments.Remove:hidden#2
+
+Authored path: `comments.Remove`.
+- Covered by [Event comments](../design/compositions/comments.md), line 51.
+- Covered by [Event comments](../design/compositions/comments.md), line 78.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Remove
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/remove", requestId, session)
+  no view "(user) can read comment (comment)" with (comment, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### comments.Remove:other#2
+
+Authored path: `comments.Remove`.
+- Covered by [Event comments](../design/compositions/comments.md), line 51.
+- Covered by [Event comments](../design/compositions/comments.md), line 78.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Remove
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/remove", requestId, session)
+  view "(user) can read comment (comment)" with (comment, user)
+  no view "(user) can remove comment (comment)" with (comment, user)
+then
+  RequestBoundary.respond (error: "NOT_COMMENT_MODERATOR", requestId)
+```
+
+### comments.Reply
+
+Authored path: `comments.Reply`.
+- Covered by [Event comments](../design/compositions/comments.md), line 42.
+- Covered by [Event comments](../design/compositions/comments.md), line 76.
+
+```reaction
+when RequestBoundary.request (comment, path: "/comments/reply", requestId, session, text)
+where
+  at is the current flow's instant
+  reply is newCommentIdentity
+then
+  Sessioning.use (session)
+```
+
+### comments.Reply:hidden#2
+
+Authored path: `comments.Reply`.
+- Covered by [Event comments](../design/compositions/comments.md), line 42.
+- Covered by [Event comments](../design/compositions/comments.md), line 76.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Reply
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/reply", requestId, session, text)
+  no view "(user) can read comment (comment)" with (comment, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### comments.Reply:hidden#3
+
+Authored path: `comments.Reply`.
+- Covered by [Event comments](../design/compositions/comments.md), line 42.
+- Covered by [Event comments](../design/compositions/comments.md), line 76.
+
+```reaction
+when RequestBoundary.respond (error: "NOT_FOUND", requestId), asked by comments.Reply:hidden#2
+at the flow's settlement frontier
+where
+  earlier, Sessioning.use (session, subject: user), asked by comments.Reply
+  earlier, RequestBoundary.request (comment, path: "/comments/reply", requestId, session, text)
+  view "(user) can read comment (comment)" with (comment, user)
+  reply is newCommentIdentity
+then
+  RequestBoundary.respond (comment: reply, requestId)
+```
+
+### comments.Reply:readable#2
+
+Authored path: `comments.Reply`.
+- Covered by [Event comments](../design/compositions/comments.md), line 42.
+- Covered by [Event comments](../design/compositions/comments.md), line 76.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by comments.Reply
+where
+  earlier, RequestBoundary.request (comment, path: "/comments/reply", requestId, session, text)
+  view "(user) can read comment (comment)" with (comment, user)
+  at is the current flow's instant
+  reply is newCommentIdentity
+then
+  Commenting.reply (at, author: user, comment: reply, parent: comment, text)
+```
+
+### comments.Reply:readable#3
+
+Authored path: `comments.Reply`.
+- Covered by [Event comments](../design/compositions/comments.md), line 42.
+- Covered by [Event comments](../design/compositions/comments.md), line 76.
+
+```reaction
+when Commenting.reply (at, author: user, comment: reply, parent: comment, text), asked by comments.Reply:readable#2
+at the flow's settlement frontier
+where
+  view "(user) can read comment (comment)" with (comment, user)
+  earlier, RequestBoundary.request (comment, path: "/comments/reply", requestId, session, text)
+then
+  RequestBoundary.respond (comment: reply, requestId)
+```
+
 ### events.Attendees
 
 Authored path: `events.Attendees`.
-- Covered by [Events](../design/compositions/events.md), line 80.
-- Covered by [Events](../design/compositions/events.md), line 92.
+- Covered by [Events](../design/compositions/events.md), line 128.
+- Covered by [Events](../design/compositions/events.md), line 140.
 
 ```reaction
 when RequestBoundary.request (event, path: "/events/attendees", requestId, session)
@@ -537,8 +1100,8 @@ then
 ### events.Attendees:hidden#2
 
 Authored path: `events.Attendees`.
-- Covered by [Events](../design/compositions/events.md), line 80.
-- Covered by [Events](../design/compositions/events.md), line 92.
+- Covered by [Events](../design/compositions/events.md), line 128.
+- Covered by [Events](../design/compositions/events.md), line 140.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Attendees
@@ -552,8 +1115,8 @@ then
 ### events.Attendees:other#2
 
 Authored path: `events.Attendees`.
-- Covered by [Events](../design/compositions/events.md), line 80.
-- Covered by [Events](../design/compositions/events.md), line 92.
+- Covered by [Events](../design/compositions/events.md), line 128.
+- Covered by [Events](../design/compositions/events.md), line 140.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Attendees
@@ -568,8 +1131,8 @@ then
 ### events.Attendees:owner#2
 
 Authored path: `events.Attendees`.
-- Covered by [Events](../design/compositions/events.md), line 80.
-- Covered by [Events](../design/compositions/events.md), line 92.
+- Covered by [Events](../design/compositions/events.md), line 128.
+- Covered by [Events](../design/compositions/events.md), line 140.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Attendees
@@ -583,8 +1146,8 @@ then
 ### events.Details
 
 Authored path: `events.Details`.
-- Covered by [Events](../design/compositions/events.md), line 37.
-- Covered by [Events](../design/compositions/events.md), line 44.
+- Covered by [Events](../design/compositions/events.md), line 76.
+- Covered by [Events](../design/compositions/events.md), line 83.
 
 ```reaction
 when RequestBoundary.request (event, path: "/events/details", requestId, session)
@@ -595,8 +1158,8 @@ then
 ### events.Details:hidden#2
 
 Authored path: `events.Details`.
-- Covered by [Events](../design/compositions/events.md), line 37.
-- Covered by [Events](../design/compositions/events.md), line 44.
+- Covered by [Events](../design/compositions/events.md), line 76.
+- Covered by [Events](../design/compositions/events.md), line 83.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Details
@@ -610,8 +1173,8 @@ then
 ### events.Details:readable#2
 
 Authored path: `events.Details`.
-- Covered by [Events](../design/compositions/events.md), line 37.
-- Covered by [Events](../design/compositions/events.md), line 44.
+- Covered by [Events](../design/compositions/events.md), line 76.
+- Covered by [Events](../design/compositions/events.md), line 83.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Details
@@ -625,8 +1188,8 @@ then
 ### events.Explore
 
 Authored path: `events.Explore`.
-- Covered by [Events](../design/compositions/events.md), line 33.
-- Covered by [Events](../design/compositions/events.md), line 42.
+- Covered by [Events](../design/compositions/events.md), line 72.
+- Covered by [Events](../design/compositions/events.md), line 81.
 
 ```reaction
 when RequestBoundary.request (path: "/events/explore", requestId, session)
@@ -637,8 +1200,8 @@ then
 ### events.Explore#2
 
 Authored path: `events.Explore`.
-- Covered by [Events](../design/compositions/events.md), line 33.
-- Covered by [Events](../design/compositions/events.md), line 42.
+- Covered by [Events](../design/compositions/events.md), line 72.
+- Covered by [Events](../design/compositions/events.md), line 81.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Explore
@@ -651,8 +1214,8 @@ then
 ### events.GroupEvents
 
 Authored path: `events.GroupEvents`.
-- Covered by [Events](../design/compositions/events.md), line 35.
-- Covered by [Events](../design/compositions/events.md), line 43.
+- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 82.
 
 ```reaction
 when RequestBoundary.request (group, path: "/events/group", requestId, session)
@@ -663,8 +1226,8 @@ then
 ### events.GroupEvents:hidden#2
 
 Authored path: `events.GroupEvents`.
-- Covered by [Events](../design/compositions/events.md), line 35.
-- Covered by [Events](../design/compositions/events.md), line 43.
+- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 82.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.GroupEvents
@@ -678,8 +1241,8 @@ then
 ### events.GroupEvents:member#2
 
 Authored path: `events.GroupEvents`.
-- Covered by [Events](../design/compositions/events.md), line 35.
-- Covered by [Events](../design/compositions/events.md), line 43.
+- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 82.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.GroupEvents
@@ -690,11 +1253,54 @@ then
   RequestBoundary.respond (events: former "events in (group) for (user)" with (group, user), requestId)
 ```
 
+### events.Picture
+
+Authored path: `events.Picture`.
+- Covered by [Events](../design/compositions/events.md), line 5.
+- Covered by [Events](../design/compositions/events.md), line 38.
+
+```reaction
+when RequestBoundary.request (event, path: "/events/picture", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### events.Picture:hidden#2
+
+Authored path: `events.Picture`.
+- Covered by [Events](../design/compositions/events.md), line 5.
+- Covered by [Events](../design/compositions/events.md), line 38.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by events.Picture
+where
+  earlier, RequestBoundary.request (event, path: "/events/picture", requestId, session)
+  no view "(user) can read (event)" with (event, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### events.Picture:readable#2
+
+Authored path: `events.Picture`.
+- Covered by [Events](../design/compositions/events.md), line 5.
+- Covered by [Events](../design/compositions/events.md), line 38.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by events.Picture
+where
+  earlier, RequestBoundary.request (event, path: "/events/picture", requestId, session)
+  view "(user) can read (event)" with (event, user)
+  EventPublishing._getPicture (event) has (picture)
+then
+  RequestBoundary.respond (picture, requestId)
+```
+
 ### events.Publish
 
 Authored path: `events.Publish`.
-- Covered by [Events](../design/compositions/events.md), line 49.
-- Covered by [Events](../design/compositions/events.md), line 73.
+- Covered by [Events](../design/compositions/events.md), line 88.
+- Covered by [Events](../design/compositions/events.md), line 121.
 
 ```reaction
 when RequestBoundary.request (description, end, group, location, path: "/events/publish", requestId, session, start, title)
@@ -705,8 +1311,8 @@ then
 ### events.Publish:hidden#2
 
 Authored path: `events.Publish`.
-- Covered by [Events](../design/compositions/events.md), line 49.
-- Covered by [Events](../design/compositions/events.md), line 73.
+- Covered by [Events](../design/compositions/events.md), line 88.
+- Covered by [Events](../design/compositions/events.md), line 121.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Publish
@@ -720,8 +1326,8 @@ then
 ### events.Publish:member#2
 
 Authored path: `events.Publish`.
-- Covered by [Events](../design/compositions/events.md), line 49.
-- Covered by [Events](../design/compositions/events.md), line 73.
+- Covered by [Events](../design/compositions/events.md), line 88.
+- Covered by [Events](../design/compositions/events.md), line 121.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Publish
@@ -737,8 +1343,8 @@ then
 ### events.Publish:member#3
 
 Authored path: `events.Publish`.
-- Covered by [Events](../design/compositions/events.md), line 49.
-- Covered by [Events](../design/compositions/events.md), line 73.
+- Covered by [Events](../design/compositions/events.md), line 88.
+- Covered by [Events](../design/compositions/events.md), line 121.
 
 ```reaction
 when EventPublishing.publish (description, end: endDate, group, location, organizer: user, start: startDate, title, event), asked by events.Publish:member#2
@@ -751,8 +1357,8 @@ then
 ### events.Remove
 
 Authored path: `events.Remove`.
-- Covered by [Events](../design/compositions/events.md), line 64.
-- Covered by [Events](../design/compositions/events.md), line 75.
+- Covered by [Events](../design/compositions/events.md), line 108.
+- Covered by [Events](../design/compositions/events.md), line 123.
 
 ```reaction
 when RequestBoundary.request (event, path: "/events/remove", requestId, session)
@@ -763,8 +1369,8 @@ then
 ### events.Remove:hidden#2
 
 Authored path: `events.Remove`.
-- Covered by [Events](../design/compositions/events.md), line 64.
-- Covered by [Events](../design/compositions/events.md), line 75.
+- Covered by [Events](../design/compositions/events.md), line 108.
+- Covered by [Events](../design/compositions/events.md), line 123.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Remove
@@ -775,11 +1381,28 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
+### events.Remove:hidden#3
+
+Authored path: `events.Remove`.
+- Covered by [Events](../design/compositions/events.md), line 108.
+- Covered by [Events](../design/compositions/events.md), line 123.
+
+```reaction
+when RequestBoundary.respond (error: "NOT_FOUND", requestId), asked by events.Remove:hidden#2
+at the flow's settlement frontier
+where
+  earlier, Sessioning.use (session, subject: user), asked by events.Remove
+  earlier, RequestBoundary.request (event, path: "/events/remove", requestId, session)
+  view "(user) can manage (event)" with (event, user)
+then
+  RequestBoundary.respond (event, requestId)
+```
+
 ### events.Remove:other#2
 
 Authored path: `events.Remove`.
-- Covered by [Events](../design/compositions/events.md), line 64.
-- Covered by [Events](../design/compositions/events.md), line 75.
+- Covered by [Events](../design/compositions/events.md), line 108.
+- Covered by [Events](../design/compositions/events.md), line 123.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Remove
@@ -791,11 +1414,28 @@ then
   RequestBoundary.respond (error: "NOT_EVENT_ORGANIZER", requestId)
 ```
 
+### events.Remove:other#3
+
+Authored path: `events.Remove`.
+- Covered by [Events](../design/compositions/events.md), line 108.
+- Covered by [Events](../design/compositions/events.md), line 123.
+
+```reaction
+when RequestBoundary.respond (error: "NOT_EVENT_ORGANIZER", requestId), asked by events.Remove:other#2
+at the flow's settlement frontier
+where
+  earlier, Sessioning.use (session, subject: user), asked by events.Remove
+  earlier, RequestBoundary.request (event, path: "/events/remove", requestId, session)
+  view "(user) can manage (event)" with (event, user)
+then
+  RequestBoundary.respond (event, requestId)
+```
+
 ### events.Remove:owner#2
 
 Authored path: `events.Remove`.
-- Covered by [Events](../design/compositions/events.md), line 64.
-- Covered by [Events](../design/compositions/events.md), line 75.
+- Covered by [Events](../design/compositions/events.md), line 108.
+- Covered by [Events](../design/compositions/events.md), line 123.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Remove
@@ -809,12 +1449,14 @@ then
 ### events.Remove:owner#3
 
 Authored path: `events.Remove`.
-- Covered by [Events](../design/compositions/events.md), line 64.
-- Covered by [Events](../design/compositions/events.md), line 75.
+- Covered by [Events](../design/compositions/events.md), line 108.
+- Covered by [Events](../design/compositions/events.md), line 123.
 
 ```reaction
 when EventPublishing.remove (event, user), asked by events.Remove:owner#2
+at the flow's settlement frontier
 where
+  view "(user) can manage (event)" with (event, user)
   earlier, RequestBoundary.request (event, path: "/events/remove", requestId, session)
 then
   RequestBoundary.respond (event, requestId)
@@ -823,8 +1465,8 @@ then
 ### events.Revise
 
 Authored path: `events.Revise`.
-- Covered by [Events](../design/compositions/events.md), line 56.
-- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 95.
+- Covered by [Events](../design/compositions/events.md), line 122.
 
 ```reaction
 when RequestBoundary.request (description, end, event, location, path: "/events/revise", requestId, session, start, title)
@@ -835,8 +1477,8 @@ then
 ### events.Revise:hidden#2
 
 Authored path: `events.Revise`.
-- Covered by [Events](../design/compositions/events.md), line 56.
-- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 95.
+- Covered by [Events](../design/compositions/events.md), line 122.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Revise
@@ -847,11 +1489,28 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
+### events.Revise:hidden#3
+
+Authored path: `events.Revise`.
+- Covered by [Events](../design/compositions/events.md), line 95.
+- Covered by [Events](../design/compositions/events.md), line 122.
+
+```reaction
+when RequestBoundary.respond (error: "NOT_FOUND", requestId), asked by events.Revise:hidden#2
+at the flow's settlement frontier
+where
+  earlier, Sessioning.use (session, subject: user), asked by events.Revise
+  earlier, RequestBoundary.request (description, end, event, location, path: "/events/revise", requestId, session, start, title)
+  view "(user) can manage (event)" with (event, user)
+then
+  RequestBoundary.respond (event, requestId)
+```
+
 ### events.Revise:other#2
 
 Authored path: `events.Revise`.
-- Covered by [Events](../design/compositions/events.md), line 56.
-- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 95.
+- Covered by [Events](../design/compositions/events.md), line 122.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Revise
@@ -863,11 +1522,28 @@ then
   RequestBoundary.respond (error: "NOT_EVENT_ORGANIZER", requestId)
 ```
 
+### events.Revise:other#3
+
+Authored path: `events.Revise`.
+- Covered by [Events](../design/compositions/events.md), line 95.
+- Covered by [Events](../design/compositions/events.md), line 122.
+
+```reaction
+when RequestBoundary.respond (error: "NOT_EVENT_ORGANIZER", requestId), asked by events.Revise:other#2
+at the flow's settlement frontier
+where
+  earlier, Sessioning.use (session, subject: user), asked by events.Revise
+  earlier, RequestBoundary.request (description, end, event, location, path: "/events/revise", requestId, session, start, title)
+  view "(user) can manage (event)" with (event, user)
+then
+  RequestBoundary.respond (event, requestId)
+```
+
 ### events.Revise:owner#2
 
 Authored path: `events.Revise`.
-- Covered by [Events](../design/compositions/events.md), line 56.
-- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 95.
+- Covered by [Events](../design/compositions/events.md), line 122.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by events.Revise
@@ -883,13 +1559,87 @@ then
 ### events.Revise:owner#3
 
 Authored path: `events.Revise`.
-- Covered by [Events](../design/compositions/events.md), line 56.
-- Covered by [Events](../design/compositions/events.md), line 74.
+- Covered by [Events](../design/compositions/events.md), line 95.
+- Covered by [Events](../design/compositions/events.md), line 122.
 
 ```reaction
 when EventPublishing.revise (description, end: endDate, event, location, start: startDate, title, user), asked by events.Revise:owner#2
+at the flow's settlement frontier
 where
+  view "(user) can manage (event)" with (event, user)
   earlier, RequestBoundary.request (description, end, event, location, path: "/events/revise", requestId, session, start, title)
+then
+  RequestBoundary.respond (event, requestId)
+```
+
+### events.SetPicture
+
+Authored path: `events.SetPicture`.
+- Covered by [Events](../design/compositions/events.md), line 8.
+- Covered by [Events](../design/compositions/events.md), line 39.
+
+```reaction
+when RequestBoundary.request (event, path: "/events/set-picture", picture, requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### events.SetPicture:hidden#2
+
+Authored path: `events.SetPicture`.
+- Covered by [Events](../design/compositions/events.md), line 8.
+- Covered by [Events](../design/compositions/events.md), line 39.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by events.SetPicture
+where
+  earlier, RequestBoundary.request (event, path: "/events/set-picture", picture, requestId, session)
+  no view "(user) can read (event)" with (event, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### events.SetPicture:other#2
+
+Authored path: `events.SetPicture`.
+- Covered by [Events](../design/compositions/events.md), line 8.
+- Covered by [Events](../design/compositions/events.md), line 39.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by events.SetPicture
+where
+  earlier, RequestBoundary.request (event, path: "/events/set-picture", picture, requestId, session)
+  view "(user) can read (event)" with (event, user)
+  no view "(user) can manage (event)" with (event, user)
+then
+  RequestBoundary.respond (error: "NOT_EVENT_ORGANIZER", requestId)
+```
+
+### events.SetPicture:owner#2
+
+Authored path: `events.SetPicture`.
+- Covered by [Events](../design/compositions/events.md), line 8.
+- Covered by [Events](../design/compositions/events.md), line 39.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by events.SetPicture
+where
+  earlier, RequestBoundary.request (event, path: "/events/set-picture", picture, requestId, session)
+  view "(user) can manage (event)" with (event, user)
+then
+  EventPublishing.setPicture (event, picture, user)
+```
+
+### events.SetPicture:owner#3
+
+Authored path: `events.SetPicture`.
+- Covered by [Events](../design/compositions/events.md), line 8.
+- Covered by [Events](../design/compositions/events.md), line 39.
+
+```reaction
+when EventPublishing.setPicture (event, picture, user), asked by events.SetPicture:owner#2
+where
+  earlier, RequestBoundary.request (event, path: "/events/set-picture", picture, requestId, session)
 then
   RequestBoundary.respond (event, requestId)
 ```
@@ -897,8 +1647,8 @@ then
 ### groups.Approve
 
 Authored path: `groups.Approve`.
-- Covered by [Groups](../design/compositions/groups.md), line 49.
-- Covered by [Groups](../design/compositions/groups.md), line 66.
+- Covered by [Groups](../design/compositions/groups.md), line 83.
+- Covered by [Groups](../design/compositions/groups.md), line 100.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/approve", requestId, requester, session)
@@ -909,8 +1659,8 @@ then
 ### groups.Approve#2
 
 Authored path: `groups.Approve`.
-- Covered by [Groups](../design/compositions/groups.md), line 49.
-- Covered by [Groups](../design/compositions/groups.md), line 66.
+- Covered by [Groups](../design/compositions/groups.md), line 83.
+- Covered by [Groups](../design/compositions/groups.md), line 100.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Approve
@@ -923,8 +1673,8 @@ then
 ### groups.Approve#3
 
 Authored path: `groups.Approve`.
-- Covered by [Groups](../design/compositions/groups.md), line 49.
-- Covered by [Groups](../design/compositions/groups.md), line 66.
+- Covered by [Groups](../design/compositions/groups.md), line 83.
+- Covered by [Groups](../design/compositions/groups.md), line 100.
 
 ```reaction
 when Grouping.approve (group, requester, user), asked by groups.Approve#2
@@ -937,8 +1687,8 @@ then
 ### groups.ChangePolicy
 
 Authored path: `groups.ChangePolicy`.
-- Covered by [Groups](../design/compositions/groups.md), line 57.
-- Covered by [Groups](../design/compositions/groups.md), line 68.
+- Covered by [Groups](../design/compositions/groups.md), line 91.
+- Covered by [Groups](../design/compositions/groups.md), line 102.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/policy", policy, requestId, session)
@@ -949,8 +1699,8 @@ then
 ### groups.ChangePolicy#2
 
 Authored path: `groups.ChangePolicy`.
-- Covered by [Groups](../design/compositions/groups.md), line 57.
-- Covered by [Groups](../design/compositions/groups.md), line 68.
+- Covered by [Groups](../design/compositions/groups.md), line 91.
+- Covered by [Groups](../design/compositions/groups.md), line 102.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.ChangePolicy
@@ -963,8 +1713,8 @@ then
 ### groups.ChangePolicy#3
 
 Authored path: `groups.ChangePolicy`.
-- Covered by [Groups](../design/compositions/groups.md), line 57.
-- Covered by [Groups](../design/compositions/groups.md), line 68.
+- Covered by [Groups](../design/compositions/groups.md), line 91.
+- Covered by [Groups](../design/compositions/groups.md), line 102.
 
 ```reaction
 when Grouping.changePolicy (group, policy, user), asked by groups.ChangePolicy#2
@@ -977,8 +1727,8 @@ then
 ### groups.Create
 
 Authored path: `groups.Create`.
-- Covered by [Groups](../design/compositions/groups.md), line 39.
-- Covered by [Groups](../design/compositions/groups.md), line 64.
+- Covered by [Groups](../design/compositions/groups.md), line 73.
+- Covered by [Groups](../design/compositions/groups.md), line 98.
 
 ```reaction
 when RequestBoundary.request (description, name, path: "/groups/create", policy, requestId, session)
@@ -989,8 +1739,8 @@ then
 ### groups.Create#2
 
 Authored path: `groups.Create`.
-- Covered by [Groups](../design/compositions/groups.md), line 39.
-- Covered by [Groups](../design/compositions/groups.md), line 64.
+- Covered by [Groups](../design/compositions/groups.md), line 73.
+- Covered by [Groups](../design/compositions/groups.md), line 98.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Create
@@ -1003,8 +1753,8 @@ then
 ### groups.Create#3
 
 Authored path: `groups.Create`.
-- Covered by [Groups](../design/compositions/groups.md), line 39.
-- Covered by [Groups](../design/compositions/groups.md), line 64.
+- Covered by [Groups](../design/compositions/groups.md), line 73.
+- Covered by [Groups](../design/compositions/groups.md), line 98.
 
 ```reaction
 when Grouping.createGroup (description, name, policy, user, group), asked by groups.Create#2
@@ -1017,8 +1767,8 @@ then
 ### groups.Delete
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/delete", requestId, session)
@@ -1029,8 +1779,8 @@ then
 ### groups.Delete:delete#2
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Delete
@@ -1040,31 +1790,43 @@ where
   no view "(user) organizes an active event in (group)" with (group, user)
   EventPublishing._getEventCollection (group) has (events)
 then
-  EventMarking.clearMarks (events, user)
+  Notifying.clear (subjects: events, user)
 ```
 
 ### groups.Delete:delete#3
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
-when EventMarking.clearMarks (events, user), asked by groups.Delete:delete#2
+when Notifying.clear (subjects: events, user), asked by groups.Delete:delete#2
+then
+  EventMarking.clearMarks (events, user)
+```
+
+### groups.Delete:delete#4
+
+Authored path: `groups.Delete`.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
+
+```reaction
+when EventMarking.clearMarks (events, user), asked by groups.Delete:delete#3
 where
   earlier, RequestBoundary.request (group, path: "/groups/delete", requestId, session)
 then
   Grouping.deleteGroup (group, user)
 ```
 
-### groups.Delete:delete#4
+### groups.Delete:delete#5
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
-when Grouping.deleteGroup (group, user), asked by groups.Delete:delete#3
+when Grouping.deleteGroup (group, user), asked by groups.Delete:delete#4
 where
   earlier, RequestBoundary.request (group, path: "/groups/delete", requestId, session)
 then
@@ -1074,8 +1836,8 @@ then
 ### groups.Delete:missing#2
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Delete
@@ -1089,8 +1851,8 @@ then
 ### groups.Delete:organizer#2
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Delete
@@ -1105,8 +1867,8 @@ then
 ### groups.Delete:outsider#2
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Delete
@@ -1121,8 +1883,8 @@ then
 ### groups.Delete:shared#2
 
 Authored path: `groups.Delete`.
-- Covered by [Groups](../design/compositions/groups.md), line 116.
-- Covered by [Groups](../design/compositions/groups.md), line 135.
+- Covered by [Groups](../design/compositions/groups.md), line 150.
+- Covered by [Groups](../design/compositions/groups.md), line 169.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Delete
@@ -1137,8 +1899,8 @@ then
 ### groups.Details
 
 Authored path: `groups.Details`.
-- Covered by [Groups](../design/compositions/groups.md), line 17.
-- Covered by [Groups](../design/compositions/groups.md), line 32.
+- Covered by [Groups](../design/compositions/groups.md), line 51.
+- Covered by [Groups](../design/compositions/groups.md), line 66.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/details", requestId, session)
@@ -1149,8 +1911,8 @@ then
 ### groups.Details:found#2
 
 Authored path: `groups.Details`.
-- Covered by [Groups](../design/compositions/groups.md), line 17.
-- Covered by [Groups](../design/compositions/groups.md), line 32.
+- Covered by [Groups](../design/compositions/groups.md), line 51.
+- Covered by [Groups](../design/compositions/groups.md), line 66.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Details
@@ -1164,8 +1926,8 @@ then
 ### groups.Details:missing#2
 
 Authored path: `groups.Details`.
-- Covered by [Groups](../design/compositions/groups.md), line 17.
-- Covered by [Groups](../design/compositions/groups.md), line 32.
+- Covered by [Groups](../design/compositions/groups.md), line 51.
+- Covered by [Groups](../design/compositions/groups.md), line 66.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Details
@@ -1179,8 +1941,8 @@ then
 ### groups.Join
 
 Authored path: `groups.Join`.
-- Covered by [Groups](../design/compositions/groups.md), line 44.
-- Covered by [Groups](../design/compositions/groups.md), line 65.
+- Covered by [Groups](../design/compositions/groups.md), line 78.
+- Covered by [Groups](../design/compositions/groups.md), line 99.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/join", requestId, session)
@@ -1191,8 +1953,8 @@ then
 ### groups.Join#2
 
 Authored path: `groups.Join`.
-- Covered by [Groups](../design/compositions/groups.md), line 44.
-- Covered by [Groups](../design/compositions/groups.md), line 65.
+- Covered by [Groups](../design/compositions/groups.md), line 78.
+- Covered by [Groups](../design/compositions/groups.md), line 99.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Join
@@ -1205,8 +1967,8 @@ then
 ### groups.Join#3
 
 Authored path: `groups.Join`.
-- Covered by [Groups](../design/compositions/groups.md), line 44.
-- Covered by [Groups](../design/compositions/groups.md), line 65.
+- Covered by [Groups](../design/compositions/groups.md), line 78.
+- Covered by [Groups](../design/compositions/groups.md), line 99.
 
 ```reaction
 when Grouping.join (group, user, status), asked by groups.Join#2
@@ -1219,8 +1981,8 @@ then
 ### groups.Leave
 
 Authored path: `groups.Leave`.
-- Covered by [Groups](../design/compositions/groups.md), line 73.
-- Covered by [Groups](../design/compositions/groups.md), line 92.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/leave", requestId, session)
@@ -1231,8 +1993,8 @@ then
 ### groups.Leave:leave#2
 
 Authored path: `groups.Leave`.
-- Covered by [Groups](../design/compositions/groups.md), line 73.
-- Covered by [Groups](../design/compositions/groups.md), line 92.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Leave
@@ -1242,31 +2004,43 @@ where
   no view "(user) organizes an active event in (group)" with (group, user)
   EventPublishing._getEventCollection (group) has (events)
 then
-  EventMarking.clearMarks (events, user)
+  Notifying.clear (subjects: events, user)
 ```
 
 ### groups.Leave:leave#3
 
 Authored path: `groups.Leave`.
-- Covered by [Groups](../design/compositions/groups.md), line 73.
-- Covered by [Groups](../design/compositions/groups.md), line 92.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
 
 ```reaction
-when EventMarking.clearMarks (events, user), asked by groups.Leave:leave#2
+when Notifying.clear (subjects: events, user), asked by groups.Leave:leave#2
+then
+  EventMarking.clearMarks (events, user)
+```
+
+### groups.Leave:leave#4
+
+Authored path: `groups.Leave`.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
+
+```reaction
+when EventMarking.clearMarks (events, user), asked by groups.Leave:leave#3
 where
   earlier, RequestBoundary.request (group, path: "/groups/leave", requestId, session)
 then
   Grouping.leave (group, user)
 ```
 
-### groups.Leave:leave#4
+### groups.Leave:leave#5
 
 Authored path: `groups.Leave`.
-- Covered by [Groups](../design/compositions/groups.md), line 73.
-- Covered by [Groups](../design/compositions/groups.md), line 92.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
 
 ```reaction
-when Grouping.leave (group, user), asked by groups.Leave:leave#3
+when Grouping.leave (group, user), asked by groups.Leave:leave#4
 where
   earlier, RequestBoundary.request (group, path: "/groups/leave", requestId, session)
 then
@@ -1276,8 +2050,8 @@ then
 ### groups.Leave:missing#2
 
 Authored path: `groups.Leave`.
-- Covered by [Groups](../design/compositions/groups.md), line 73.
-- Covered by [Groups](../design/compositions/groups.md), line 92.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Leave
@@ -1291,8 +2065,8 @@ then
 ### groups.Leave:organizer#2
 
 Authored path: `groups.Leave`.
-- Covered by [Groups](../design/compositions/groups.md), line 73.
-- Covered by [Groups](../design/compositions/groups.md), line 92.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Leave
@@ -1307,8 +2081,8 @@ then
 ### groups.Leave:outsider#2
 
 Authored path: `groups.Leave`.
-- Covered by [Groups](../design/compositions/groups.md), line 73.
-- Covered by [Groups](../design/compositions/groups.md), line 92.
+- Covered by [Groups](../design/compositions/groups.md), line 107.
+- Covered by [Groups](../design/compositions/groups.md), line 126.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Leave
@@ -1323,8 +2097,8 @@ then
 ### groups.List
 
 Authored path: `groups.List`.
-- Covered by [Groups](../design/compositions/groups.md), line 10.
-- Covered by [Groups](../design/compositions/groups.md), line 31.
+- Covered by [Groups](../design/compositions/groups.md), line 44.
+- Covered by [Groups](../design/compositions/groups.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/groups/list", requestId, session)
@@ -1335,8 +2109,8 @@ then
 ### groups.List#2
 
 Authored path: `groups.List`.
-- Covered by [Groups](../design/compositions/groups.md), line 10.
-- Covered by [Groups](../design/compositions/groups.md), line 31.
+- Covered by [Groups](../design/compositions/groups.md), line 44.
+- Covered by [Groups](../design/compositions/groups.md), line 65.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.List
@@ -1349,8 +2123,8 @@ then
 ### groups.Members
 
 Authored path: `groups.Members`.
-- Covered by [Groups](../design/compositions/groups.md), line 22.
-- Covered by [Groups](../design/compositions/groups.md), line 33.
+- Covered by [Groups](../design/compositions/groups.md), line 56.
+- Covered by [Groups](../design/compositions/groups.md), line 67.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/members", requestId, session)
@@ -1361,8 +2135,8 @@ then
 ### groups.Members:member#2
 
 Authored path: `groups.Members`.
-- Covered by [Groups](../design/compositions/groups.md), line 22.
-- Covered by [Groups](../design/compositions/groups.md), line 33.
+- Covered by [Groups](../design/compositions/groups.md), line 56.
+- Covered by [Groups](../design/compositions/groups.md), line 67.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Members
@@ -1376,8 +2150,8 @@ then
 ### groups.Members:missing#2
 
 Authored path: `groups.Members`.
-- Covered by [Groups](../design/compositions/groups.md), line 22.
-- Covered by [Groups](../design/compositions/groups.md), line 33.
+- Covered by [Groups](../design/compositions/groups.md), line 56.
+- Covered by [Groups](../design/compositions/groups.md), line 67.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Members
@@ -1391,8 +2165,8 @@ then
 ### groups.Members:outsider#2
 
 Authored path: `groups.Members`.
-- Covered by [Groups](../design/compositions/groups.md), line 22.
-- Covered by [Groups](../design/compositions/groups.md), line 33.
+- Covered by [Groups](../design/compositions/groups.md), line 56.
+- Covered by [Groups](../design/compositions/groups.md), line 67.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Members
@@ -1404,11 +2178,53 @@ then
   RequestBoundary.respond (error: "NOT_GROUP_MEMBER", requestId)
 ```
 
+### groups.Picture
+
+Authored path: `groups.Picture`.
+- Covered by [Groups](../design/compositions/groups.md), line 5.
+- Covered by [Groups](../design/compositions/groups.md), line 26.
+
+```reaction
+when RequestBoundary.request (group, path: "/groups/picture", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### groups.Picture:found#2
+
+Authored path: `groups.Picture`.
+- Covered by [Groups](../design/compositions/groups.md), line 5.
+- Covered by [Groups](../design/compositions/groups.md), line 26.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by groups.Picture
+where
+  earlier, RequestBoundary.request (group, path: "/groups/picture", requestId, session)
+  Grouping._getPicture (group) has (picture)
+then
+  RequestBoundary.respond (picture, requestId)
+```
+
+### groups.Picture:missing#2
+
+Authored path: `groups.Picture`.
+- Covered by [Groups](../design/compositions/groups.md), line 5.
+- Covered by [Groups](../design/compositions/groups.md), line 26.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by groups.Picture
+where
+  earlier, RequestBoundary.request (group, path: "/groups/picture", requestId, session)
+  no Grouping._getGroupDetails (group)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
 ### groups.Reject
 
 Authored path: `groups.Reject`.
-- Covered by [Groups](../design/compositions/groups.md), line 50.
-- Covered by [Groups](../design/compositions/groups.md), line 67.
+- Covered by [Groups](../design/compositions/groups.md), line 84.
+- Covered by [Groups](../design/compositions/groups.md), line 101.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/reject", requestId, requester, session)
@@ -1419,8 +2235,8 @@ then
 ### groups.Reject#2
 
 Authored path: `groups.Reject`.
-- Covered by [Groups](../design/compositions/groups.md), line 50.
-- Covered by [Groups](../design/compositions/groups.md), line 67.
+- Covered by [Groups](../design/compositions/groups.md), line 84.
+- Covered by [Groups](../design/compositions/groups.md), line 101.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Reject
@@ -1433,8 +2249,8 @@ then
 ### groups.Reject#3
 
 Authored path: `groups.Reject`.
-- Covered by [Groups](../design/compositions/groups.md), line 50.
-- Covered by [Groups](../design/compositions/groups.md), line 67.
+- Covered by [Groups](../design/compositions/groups.md), line 84.
+- Covered by [Groups](../design/compositions/groups.md), line 101.
 
 ```reaction
 when Grouping.reject (group, requester, user), asked by groups.Reject#2
@@ -1447,8 +2263,8 @@ then
 ### groups.Requests
 
 Authored path: `groups.Requests`.
-- Covered by [Groups](../design/compositions/groups.md), line 23.
-- Covered by [Groups](../design/compositions/groups.md), line 34.
+- Covered by [Groups](../design/compositions/groups.md), line 57.
+- Covered by [Groups](../design/compositions/groups.md), line 68.
 
 ```reaction
 when RequestBoundary.request (group, path: "/groups/requests", requestId, session)
@@ -1459,8 +2275,8 @@ then
 ### groups.Requests:member#2
 
 Authored path: `groups.Requests`.
-- Covered by [Groups](../design/compositions/groups.md), line 23.
-- Covered by [Groups](../design/compositions/groups.md), line 34.
+- Covered by [Groups](../design/compositions/groups.md), line 57.
+- Covered by [Groups](../design/compositions/groups.md), line 68.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Requests
@@ -1474,8 +2290,8 @@ then
 ### groups.Requests:missing#2
 
 Authored path: `groups.Requests`.
-- Covered by [Groups](../design/compositions/groups.md), line 23.
-- Covered by [Groups](../design/compositions/groups.md), line 34.
+- Covered by [Groups](../design/compositions/groups.md), line 57.
+- Covered by [Groups](../design/compositions/groups.md), line 68.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Requests
@@ -1489,8 +2305,8 @@ then
 ### groups.Requests:outsider#2
 
 Authored path: `groups.Requests`.
-- Covered by [Groups](../design/compositions/groups.md), line 23.
-- Covered by [Groups](../design/compositions/groups.md), line 34.
+- Covered by [Groups](../design/compositions/groups.md), line 57.
+- Covered by [Groups](../design/compositions/groups.md), line 68.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by groups.Requests
@@ -1500,6 +2316,349 @@ where
   no view "(user) belongs to (group)" with (group, user)
 then
   RequestBoundary.respond (error: "NOT_GROUP_MEMBER", requestId)
+```
+
+### groups.SetPicture
+
+Authored path: `groups.SetPicture`.
+- Covered by [Groups](../design/compositions/groups.md), line 8.
+- Covered by [Groups](../design/compositions/groups.md), line 27.
+
+```reaction
+when RequestBoundary.request (group, path: "/groups/set-picture", picture, requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### groups.SetPicture:member#2
+
+Authored path: `groups.SetPicture`.
+- Covered by [Groups](../design/compositions/groups.md), line 8.
+- Covered by [Groups](../design/compositions/groups.md), line 27.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by groups.SetPicture
+where
+  earlier, RequestBoundary.request (group, path: "/groups/set-picture", picture, requestId, session)
+  view "(user) belongs to (group)" with (group, user)
+then
+  Grouping.setPicture (group, picture, user)
+```
+
+### groups.SetPicture:member#3
+
+Authored path: `groups.SetPicture`.
+- Covered by [Groups](../design/compositions/groups.md), line 8.
+- Covered by [Groups](../design/compositions/groups.md), line 27.
+
+```reaction
+when Grouping.setPicture (group, picture, user), asked by groups.SetPicture:member#2
+where
+  earlier, RequestBoundary.request (group, path: "/groups/set-picture", picture, requestId, session)
+then
+  RequestBoundary.respond (group, requestId)
+```
+
+### groups.SetPicture:missing#2
+
+Authored path: `groups.SetPicture`.
+- Covered by [Groups](../design/compositions/groups.md), line 8.
+- Covered by [Groups](../design/compositions/groups.md), line 27.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by groups.SetPicture
+where
+  earlier, RequestBoundary.request (group, path: "/groups/set-picture", picture, requestId, session)
+  no Grouping._getGroupDetails (group)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### groups.SetPicture:outsider#2
+
+Authored path: `groups.SetPicture`.
+- Covered by [Groups](../design/compositions/groups.md), line 8.
+- Covered by [Groups](../design/compositions/groups.md), line 27.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by groups.SetPicture
+where
+  earlier, RequestBoundary.request (group, path: "/groups/set-picture", picture, requestId, session)
+  Grouping._getGroupDetails (group)
+  no view "(user) belongs to (group)" with (group, user)
+then
+  RequestBoundary.respond (error: "NOT_GROUP_MEMBER", requestId)
+```
+
+### notifications.CommentPosted
+
+Authored path: `notifications.CommentPosted`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 86.
+
+```reaction
+when Commenting.post (author, subject: event, comment)
+where
+  view "recipients of comment (comment) on (event)" with (comment, event) has (user)
+  at is the current flow's instant
+  notification is newIdentity
+then
+  Notifying.send (at, message: "New comment.", notification, subject: event, target: comment, user)
+```
+
+### notifications.CommentReplied
+
+Authored path: `notifications.CommentReplied`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 88.
+
+```reaction
+when Commenting.reply (author, comment)
+where
+  Commenting._getComment (comment) has (subject: event)
+  view "recipients of comment (comment) on (event)" with (comment, event) has (user)
+  at is the current flow's instant
+  notification is newIdentity
+then
+  Notifying.send (at, message: "New reply.", notification, subject: event, target: comment, user)
+```
+
+### notifications.Dismiss
+
+Authored path: `notifications.Dismiss`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 43.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 76.
+
+```reaction
+when RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### notifications.Dismiss:hidden#2
+
+Authored path: `notifications.Dismiss`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 43.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 76.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.Dismiss
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
+  Notifying._getNotification (notification, user) has (subject: event)
+  no view "(user) can read (event)" with (event, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### notifications.Dismiss:missing#2
+
+Authored path: `notifications.Dismiss`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 43.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 76.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.Dismiss
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
+  no Notifying._getNotification (notification, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### notifications.Dismiss:owned#2
+
+Authored path: `notifications.Dismiss`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 43.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 76.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.Dismiss
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
+  Notifying._getNotification (notification, user) has (subject: event)
+  view "(user) can read (event)" with (event, user)
+then
+  Notifying.dismiss (notification, user)
+```
+
+### notifications.Dismiss:owned#3
+
+Authored path: `notifications.Dismiss`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 43.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 76.
+
+```reaction
+when Notifying.dismiss (notification, user), asked by notifications.Dismiss:owned#2
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/dismiss", requestId, session)
+then
+  RequestBoundary.respond (notification, requestId)
+```
+
+### notifications.EventCanceled
+
+Authored path: `notifications.EventCanceled`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 9.
+
+```reaction
+when EventPublishing.remove (event, user: organizer)
+where
+  view "notification recipients for (event) excluding (organizer)" with (event, organizer) has (user)
+  at is the current flow's instant
+  notification is newIdentity
+then
+  Notifying.send (at, message: "Event canceled.", notification, subject: event, user)
+```
+
+### notifications.EventRevised
+
+Authored path: `notifications.EventRevised`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 7.
+
+```reaction
+when EventPublishing.revise (event, user: organizer, timeOrLocationChanged: true)
+where
+  view "notification recipients for (event) excluding (organizer)" with (event, organizer) has (user)
+  at is the current flow's instant
+  notification is newIdentity
+then
+  Notifying.send (at, message: "Event updated.", notification, subject: event, user)
+```
+
+### notifications.List
+
+Authored path: `notifications.List`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 40.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 73.
+
+```reaction
+when RequestBoundary.request (path: "/notifications/list", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### notifications.List#2
+
+Authored path: `notifications.List`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 40.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 73.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.List
+where
+  earlier, RequestBoundary.request (path: "/notifications/list", requestId, session)
+then
+  RequestBoundary.respond (notifications: former "inbox for (user)" with (user), requestId, unreadCount: former "unread inbox total for (user)" with (user))
+```
+
+### notifications.Read
+
+Authored path: `notifications.Read`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 41.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 74.
+
+```reaction
+when RequestBoundary.request (notification, path: "/notifications/read", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### notifications.Read:hidden#2
+
+Authored path: `notifications.Read`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 41.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 74.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.Read
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/read", requestId, session)
+  Notifying._getNotification (notification, user) has (subject: event)
+  no view "(user) can read (event)" with (event, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### notifications.Read:missing#2
+
+Authored path: `notifications.Read`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 41.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 74.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.Read
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/read", requestId, session)
+  no Notifying._getNotification (notification, user)
+then
+  RequestBoundary.respond (error: "NOT_FOUND", requestId)
+```
+
+### notifications.Read:owned#2
+
+Authored path: `notifications.Read`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 41.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 74.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.Read
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/read", requestId, session)
+  Notifying._getNotification (notification, user) has (subject: event)
+  view "(user) can read (event)" with (event, user)
+then
+  Notifying.markRead (notification, user)
+```
+
+### notifications.Read:owned#3
+
+Authored path: `notifications.Read`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 41.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 74.
+
+```reaction
+when Notifying.markRead (notification, user), asked by notifications.Read:owned#2
+where
+  earlier, RequestBoundary.request (notification, path: "/notifications/read", requestId, session)
+then
+  RequestBoundary.respond (notification, requestId)
+```
+
+### notifications.ReadAll
+
+Authored path: `notifications.ReadAll`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 46.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 75.
+
+```reaction
+when RequestBoundary.request (path: "/notifications/read-all", requestId, session)
+then
+  Sessioning.use (session)
+```
+
+### notifications.ReadAll#2
+
+Authored path: `notifications.ReadAll`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 46.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 75.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by notifications.ReadAll
+then
+  Notifying.markAllRead (user)
+```
+
+### notifications.ReadAll#3
+
+Authored path: `notifications.ReadAll`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 46.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 75.
+
+```reaction
+when Notifying.markAllRead (user), asked by notifications.ReadAll#2
+where
+  earlier, RequestBoundary.request (path: "/notifications/read-all", requestId, session)
+then
+  RequestBoundary.respond (requestId)
 ```
 
 ### passwords.Register:accepted
@@ -1627,8 +2786,8 @@ then
 ### plans.Mark
 
 Authored path: `plans.Mark`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 8.
-- Covered by [Personal plans](../design/compositions/plans.md), line 25.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
 
 ```reaction
 when RequestBoundary.request (event, intent, path: "/plans/mark", requestId, session)
@@ -1639,8 +2798,8 @@ then
 ### plans.Mark:canceled#2
 
 Authored path: `plans.Mark`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 8.
-- Covered by [Personal plans](../design/compositions/plans.md), line 25.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by plans.Mark
@@ -1652,11 +2811,56 @@ then
   RequestBoundary.respond (error: "EVENT_CANCELED", requestId)
 ```
 
+### plans.Mark:decline#2
+
+Authored path: `plans.Mark`.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by plans.Mark
+where
+  earlier, RequestBoundary.request (event, intent, path: "/plans/mark", requestId, session)
+  view "(user) can mark (event)" with (event, user)
+  intent is among ["NOT_GOING"]
+  subjects is eventSubjects (event)
+then
+  Notifying.clear (subjects, user)
+```
+
+### plans.Mark:decline#3
+
+Authored path: `plans.Mark`.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
+
+```reaction
+when Notifying.clear (subjects, user), asked by plans.Mark:decline#2
+where
+  earlier, RequestBoundary.request (event, intent, path: "/plans/mark", requestId, session)
+then
+  EventMarking.mark (event, intent, user)
+```
+
+### plans.Mark:decline#4
+
+Authored path: `plans.Mark`.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
+
+```reaction
+when EventMarking.mark (event, intent, user), asked by plans.Mark:decline#3
+where
+  earlier, RequestBoundary.request (event, intent, path: "/plans/mark", requestId, session)
+then
+  RequestBoundary.respond (event, intent, requestId)
+```
+
 ### plans.Mark:hidden#2
 
 Authored path: `plans.Mark`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 8.
-- Covered by [Personal plans](../design/compositions/plans.md), line 25.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by plans.Mark
@@ -1667,29 +2871,30 @@ then
   RequestBoundary.respond (error: "NOT_FOUND", requestId)
 ```
 
-### plans.Mark:mark#2
+### plans.Mark:save#2
 
 Authored path: `plans.Mark`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 8.
-- Covered by [Personal plans](../design/compositions/plans.md), line 25.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by plans.Mark
 where
   earlier, RequestBoundary.request (event, intent, path: "/plans/mark", requestId, session)
   view "(user) can mark (event)" with (event, user)
+  intent is among ["GOING", "INTERESTED"]
 then
   EventMarking.mark (event, intent, user)
 ```
 
-### plans.Mark:mark#3
+### plans.Mark:save#3
 
 Authored path: `plans.Mark`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 8.
-- Covered by [Personal plans](../design/compositions/plans.md), line 25.
+- Covered by [Personal plans](../design/compositions/plans.md), line 14.
+- Covered by [Personal plans](../design/compositions/plans.md), line 31.
 
 ```reaction
-when EventMarking.mark (event, intent, user), asked by plans.Mark:mark#2
+when EventMarking.mark (event, intent, user), asked by plans.Mark:save#2
 where
   earlier, RequestBoundary.request (event, intent, path: "/plans/mark", requestId, session)
 then
@@ -1699,8 +2904,8 @@ then
 ### plans.MyPlans
 
 Authored path: `plans.MyPlans`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 29.
-- Covered by [Personal plans](../design/compositions/plans.md), line 41.
+- Covered by [Personal plans](../design/compositions/plans.md), line 35.
+- Covered by [Personal plans](../design/compositions/plans.md), line 47.
 
 ```reaction
 when RequestBoundary.request (path: "/plans/list", requestId, session)
@@ -1711,8 +2916,8 @@ then
 ### plans.MyPlans#2
 
 Authored path: `plans.MyPlans`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 29.
-- Covered by [Personal plans](../design/compositions/plans.md), line 41.
+- Covered by [Personal plans](../design/compositions/plans.md), line 35.
+- Covered by [Personal plans](../design/compositions/plans.md), line 47.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by plans.MyPlans
@@ -1725,8 +2930,8 @@ then
 ### plans.Remove
 
 Authored path: `plans.Remove`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 16.
-- Covered by [Personal plans](../design/compositions/plans.md), line 26.
+- Covered by [Personal plans](../design/compositions/plans.md), line 22.
+- Covered by [Personal plans](../design/compositions/plans.md), line 32.
 
 ```reaction
 when RequestBoundary.request (event, path: "/plans/remove", requestId, session)
@@ -1734,11 +2939,27 @@ then
   Sessioning.use (session)
 ```
 
+### plans.Remove:absent#2
+
+Authored path: `plans.Remove`.
+- Covered by [Personal plans](../design/compositions/plans.md), line 22.
+- Covered by [Personal plans](../design/compositions/plans.md), line 32.
+
+```reaction
+when Sessioning.use (session, subject: user), asked by plans.Remove
+where
+  earlier, RequestBoundary.request (event, path: "/plans/remove", requestId, session)
+  view "(user) can read (event)" with (event, user)
+  EventMarking._isMarked (event, user) has (marked: false)
+then
+  RequestBoundary.respond (error: "NO_MARK_TO_REMOVE", requestId)
+```
+
 ### plans.Remove:hidden#2
 
 Authored path: `plans.Remove`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 16.
-- Covered by [Personal plans](../design/compositions/plans.md), line 26.
+- Covered by [Personal plans](../design/compositions/plans.md), line 22.
+- Covered by [Personal plans](../design/compositions/plans.md), line 32.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by plans.Remove
@@ -1752,26 +2973,42 @@ then
 ### plans.Remove:remove#2
 
 Authored path: `plans.Remove`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 16.
-- Covered by [Personal plans](../design/compositions/plans.md), line 26.
+- Covered by [Personal plans](../design/compositions/plans.md), line 22.
+- Covered by [Personal plans](../design/compositions/plans.md), line 32.
 
 ```reaction
 when Sessioning.use (session, subject: user), asked by plans.Remove
 where
   earlier, RequestBoundary.request (event, path: "/plans/remove", requestId, session)
   view "(user) can read (event)" with (event, user)
+  EventMarking._isMarked (event, user) has (marked: true)
+  subjects is eventSubjects (event)
 then
-  EventMarking.removeMark (event, user)
+  Notifying.clear (subjects, user)
 ```
 
 ### plans.Remove:remove#3
 
 Authored path: `plans.Remove`.
-- Covered by [Personal plans](../design/compositions/plans.md), line 16.
-- Covered by [Personal plans](../design/compositions/plans.md), line 26.
+- Covered by [Personal plans](../design/compositions/plans.md), line 22.
+- Covered by [Personal plans](../design/compositions/plans.md), line 32.
 
 ```reaction
-when EventMarking.removeMark (event, user), asked by plans.Remove:remove#2
+when Notifying.clear (subjects, user), asked by plans.Remove:remove#2
+where
+  earlier, RequestBoundary.request (event, path: "/plans/remove", requestId, session)
+then
+  EventMarking.removeMark (event, user)
+```
+
+### plans.Remove:remove#4
+
+Authored path: `plans.Remove`.
+- Covered by [Personal plans](../design/compositions/plans.md), line 22.
+- Covered by [Personal plans](../design/compositions/plans.md), line 32.
+
+```reaction
+when EventMarking.removeMark (event, user), asked by plans.Remove:remove#3
 where
   earlier, RequestBoundary.request (event, path: "/plans/remove", requestId, session)
 then
@@ -1789,13 +3026,20 @@ not listed here have no explicit input contract.
 - `/auth/logout` — requires `session`
 - `/auth/me` — requires `session`
 - `/auth/register` — requires `username`, `password`
+- `/comments/edit` — requires `comment`, `text`, `session`
+- `/comments/list` — requires `event`, `session`
+- `/comments/post` — requires `event`, `text`, `session`
+- `/comments/remove` — requires `comment`, `session`
+- `/comments/reply` — requires `comment`, `text`, `session`
 - `/events/attendees` — requires `event`, `session`
 - `/events/details` — requires `event`, `session`
 - `/events/explore` — requires `session`
 - `/events/group` — requires `group`, `session`
+- `/events/picture` — requires `event`, `session`
 - `/events/publish` — requires `group`, `title`, `description`, `start`, `end`, `location`, `session`
 - `/events/remove` — requires `event`, `session`
 - `/events/revise` — requires `event`, `title`, `description`, `start`, `end`, `location`, `session`
+- `/events/set-picture` — requires `event`, `picture`, `session`
 - `/groups/approve` — requires `group`, `requester`, `session`
 - `/groups/create` — requires `name`, `description`, `policy`, `session`
 - `/groups/delete` — requires `group`, `session`
@@ -1804,9 +3048,15 @@ not listed here have no explicit input contract.
 - `/groups/leave` — requires `group`, `session`
 - `/groups/list` — requires `session`
 - `/groups/members` — requires `group`, `session`
+- `/groups/picture` — requires `group`, `session`
 - `/groups/policy` — requires `group`, `policy`, `session`
 - `/groups/reject` — requires `group`, `requester`, `session`
 - `/groups/requests` — requires `group`, `session`
+- `/groups/set-picture` — requires `group`, `picture`, `session`
+- `/notifications/dismiss` — requires `notification`, `session`
+- `/notifications/list` — requires `session`
+- `/notifications/read` — requires `notification`, `session`
+- `/notifications/read-all` — requires `session`
 - `/plans/list` — requires `session`
 - `/plans/mark` — requires `event`, `intent`, `session`
 - `/plans/remove` — requires `event`, `session`

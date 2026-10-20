@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>InfiniteWeek — a week of possibilities</title>
+  <rect x="6" y="16" width="44" height="43" rx="12" transform="rotate(-9 28 37.5)" fill="#f4b2ce"/>
+  <path d="M23 14h22a11 11 0 0 1 11 11v22a11 11 0 0 1-11 11H23a11 11 0 0 1-11-11V25a11 11 0 0 1 11-11Z" fill="#faf8f0" stroke="#135d59" stroke-width="3"/>
+  <path d="M13 27h42M24 10v9m19-9v9" stroke="#135d59" stroke-width="3" stroke-linecap="round"/>
+  <path d="M34 42c-5-7-8-9-12-7-7 4-3 14 3 12 3-1 6-4 9-8" stroke="#90204f" stroke-width="5" stroke-linecap="round"/>
+  <path d="M31 38c6 8 9 11 13 9 7-4 3-14-3-12-3 1-6 4-9 8" stroke="#135d59" stroke-width="5" stroke-linecap="round"/>
+  <path d="m55 3 2.3 5.7L63 11l-5.7 2.3L55 19l-2.3-5.7L47 11l5.7-2.3Z" fill="#f2d384" stroke="#73520b" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

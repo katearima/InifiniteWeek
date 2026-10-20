@@ -1,0 +1,34 @@
+/* Reserve Griffy for main page headings and the brand; use Lora elsewhere. */
+html:root {
+  --font-body: "Lora", Georgia, serif;
+  --font-heading: "Griffy", Georgia, serif;
+  --font-brand: "Griffy", Georgia, serif;
+  font-family: var(--font-body);
+}
+
+#app h1 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* Calendar months, cards, sections, and dialogs share readable subheadings. */
+#app h2,
+#app h3 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+#app .count {
+  font-family: var(--font-body);
+}
+
+.calendar, .event-meta, .detail-facts, time {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Clickable event/group titles remain headings rather than ordinary controls. */
+#app .title-button {
+  font-family: inherit;
+}
