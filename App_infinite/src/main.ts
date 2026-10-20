@@ -2,6 +2,7 @@
 import { MongoClient } from "mongodb";
 import { initializeDefaultGroups } from "./host/bootstrap.ts";
 import { createHttpApplication } from "./host/http.ts";
+import { withFrontend } from "./host/frontend.ts";
 
 const url = process.env.MONGODB_URL;
 if (!url) throw new Error("MONGODB_URL is not set. See .env.example.");
@@ -13,11 +14,14 @@ try {
   await mongo.connect();
   await initializeDefaultGroups(mongo.db());
   const application = createHttpApplication({ database: mongo.db() }, { publicOrigin });
+  const fetch = process.env.NODE_ENV === "production"
+    ? await withFrontend(application.fetch, `${import.meta.dir}/../dist`)
+    : application.fetch;
   const server = Bun.serve({
     hostname: process.env.HOST ?? "127.0.0.1",
     port,
     maxRequestBodySize: 1024 * 1024,
-    fetch: application.fetch,
+    fetch,
   });
   console.log(`Infinite Plans API listening on ${server.url}; browser origin ${publicOrigin}`);
   let stopping = false;

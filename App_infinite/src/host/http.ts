@@ -1,6 +1,7 @@
 import { createHttpHandler } from "@mit-sdg/sync-engine-http/handler";
-import { infinitePlansPolicy } from "../http.ts";
+import { infinitePlansPolicy, requestBodyBytes } from "../http.ts";
 import { createRuntime } from "./runtime.ts";
+import { BodyReadError, bufferRequest } from "./body.ts";
 
 /** The same serialized runtime serves every HTTP workflow. */
 export function createHttpApplication(
@@ -12,7 +13,8 @@ export function createHttpApplication(
   const { application, gateway, boundary, queue } = createRuntime(resources, options);
   const handleApi = createHttpHandler({ application, gateway, policy: infinitePlansPolicy(options.publicOrigin) });
   let draining = false;
-  const json = (value: unknown, status = 200) => Response.json(value, { status, headers: { "Cache-Control": "no-store" } });
+  const reading = new AbortController();
+  const json = (value: unknown, status = 200) => Response.json(value, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
   return {
     async fetch(request: Request): Promise<Response> {
       const { pathname } = new URL(request.url);
@@ -26,9 +28,18 @@ export function createHttpApplication(
       }
       if (pathname === "/api" || pathname.startsWith("/api/")) {
         if (draining) return json({ error: "INTERNAL_ERROR" }, 503);
-        let admitted = false;
-        const result = await queue.submit(() => { admitted = true; return handleApi(request); }, { signal: request.signal, timeoutMs });
-        if (!admitted) void request.body?.cancel().catch(() => {});
+        const deadline = Date.now() + timeoutMs;
+        let buffered: Request;
+        try {
+          buffered = await bufferRequest(request, requestBodyBytes, deadline, AbortSignal.any([request.signal, reading.signal]));
+        } catch (error) {
+          const status = draining ? 503 : error instanceof BodyReadError ? error.status : 400;
+          return json({ error: status === 400 ? "INVALID_REQUEST" : "INTERNAL_ERROR" }, status);
+        }
+        if (draining) return json({ error: "INTERNAL_ERROR" }, 503);
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) return json({ error: "INTERNAL_ERROR" }, 504);
+        const result = await queue.submit(() => handleApi(buffered), { signal: request.signal, timeoutMs: remaining });
         const code = !result.ok && result.error.kind === "framework" ? result.error.code : "INTERNAL_ERROR";
         const response = result.ok ? result.value : json({ error: "INTERNAL_ERROR" },
           code === "TIMED_OUT" ? 504 : code === "ABORTED" ? 499 : code === "UNAVAILABLE" ? 503 : 500);
@@ -40,6 +51,6 @@ export function createHttpApplication(
       return json({ error: "NOT_FOUND" }, 404);
     },
     whenIdle: boundary.whenIdle,
-    beginDrain() { draining = true; return boundary.beginDrain(); },
+    beginDrain() { draining = true; reading.abort(); return boundary.beginDrain(); },
   };
 }

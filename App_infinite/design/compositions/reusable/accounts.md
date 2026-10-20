@@ -100,7 +100,14 @@ registration, logout, and every protected route. Only the configured public
 origin is accepted when Origin is present; deliberately credentialed non-browser
 clients may omit it. CORS is not enabled. Every API response is no-store.
 
-The host runs one queue across HTTP requests through accepted-flow completion.
+Before queue admission, the host buffers each API request body with the same
+768 KiB limit and a 30-second total request deadline. Incomplete bodies never
+occupy the workflow queue. Oversized or unreadable bodies return INVALID_REQUEST
+(400); body timeout returns opaque INTERNAL_ERROR (504), and caller abort returns
+499. Body reading and queue waiting share the deadline. Shutdown cancels pending
+body reads and refuses them with 503 before any concept action is admitted.
+
+The host runs one queue across fully received HTTP requests through accepted-flow completion.
 An aborted/timed-out waiter does not cancel accepted work or free the queue.
 Shutdown stops admission, drains accepted work, and closes MongoDB. /health is
 an infrastructure ping, not an application-state read; it returns 503 when the

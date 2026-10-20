@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { MongoClient } from "mongodb";
+import { createConnection } from "node:net";
 import { createHttpApplication } from "../../src/host/http.ts";
 import { applicationConceptSet } from "../../src/concepts.ts";
 import { cleanupDatabases, testDatabase } from "../support/reusable/mongo.ts";
@@ -145,6 +146,76 @@ test("real Bun listener serves the generated typed HTTP client", async () => {
 });
 
 function latch() { let release!: () => void; const promise = new Promise<void>(resolve => { release = resolve; }); return { promise, release }; }
+test("a stalled body never occupies the queue, times out, and cancels its stream", async () => {
+  const { host, post } = await setup(undefined, 500);
+  let canceled = false;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) { controller.enqueue(new TextEncoder().encode('{"username":')); },
+    cancel() { canceled = true; return new Promise<void>(() => {}); },
+  });
+  const stalled = host.fetch(new Request(`${origin}/api/auth/login`, { method: "POST", body, headers: { "Content-Type": "application/json", Origin: origin } }));
+  expect((await post("/auth/me")).status).toBe(401);
+  expect(canceled).toBe(false);
+  const response = await stalled;
+  expect(response.status).toBe(504);
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(canceled).toBe(true);
+  expect((await post("/auth/me")).status).toBe(401);
+});
+
+test("abort and shutdown cancel incomplete bodies without waiting for uploads", async () => {
+  const { host, post } = await setup();
+  let cancellations = 0;
+  const request = (signal?: AbortSignal) => new Request(`${origin}/api/auth/login`, {
+    method: "POST", signal, headers: { "Content-Type": "application/json", Origin: origin },
+    body: new ReadableStream({ cancel() { cancellations++; } }),
+  });
+  const controller = new AbortController();
+  const aborted = host.fetch(request(controller.signal)); controller.abort();
+  expect((await aborted).status).toBe(499);
+  expect((await post("/auth/me")).status).toBe(401);
+  const pending = host.fetch(request());
+  await host.beginDrain();
+  expect((await pending).status).toBe(503);
+  expect(cancellations).toBe(2);
+});
+
+test("real Bun listener recovers from a client that never finishes its HTTP body", async () => {
+  const { host } = await setup(undefined, 500);
+  const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: host.fetch }); servers.push(server);
+  const socket = createConnection({ host: "127.0.0.1", port: server.port! });
+  let wire = "";
+  const response = new Promise<string>((resolve, reject) => {
+    socket.on("error", reject);
+    socket.on("data", chunk => { wire += chunk.toString(); if (wire.includes("\r\n\r\n")) resolve(wire); });
+  });
+  try {
+    await new Promise<void>((resolve, reject) => { socket.once("connect", resolve); socket.once("error", reject); });
+    socket.write(`POST /api/auth/login HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: 100\r\n\r\n{`);
+    const healthy = () => fetch(new URL("api/auth/me", server.url), { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    expect((await healthy()).status).toBe(401);
+    expect(await response).toContain("504");
+    expect((await healthy()).status).toBe(401);
+  } finally { socket.destroy(); }
+});
+
+test("streamed bodies enforce the byte limit even without an honest content length", async () => {
+  const { host, post } = await setup();
+  for (const declared of [undefined, "2", String(768 * 1024 + 1)]) {
+    const headers: Record<string, string> = { "Content-Type": "application/json", Origin: origin };
+    if (declared) headers["Content-Length"] = declared;
+    const body = new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(new Uint8Array(768 * 1024 + 1)); } });
+    const result = await host.fetch(new Request(`${origin}/api/auth/me`, { method: "POST", headers, body }));
+    expect(result.status).toBe(400);
+    expect(await result.json()).toEqual({ error: "INVALID_REQUEST" });
+  }
+  const broken = new ReadableStream({ start(controller) { controller.error(new Error("private stream error")); } });
+  const response = await host.fetch(new Request(`${origin}/api/auth/me`, { method: "POST", body: broken }));
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({ error: "INVALID_REQUEST" });
+  expect((await post("/auth/me")).status).toBe(401);
+});
+
 test("HTTP timeout preserves accepted work and serializes subsequent cancellation", async () => {
   const entered = latch(), gate = latch();
   const { post, signup, instances } = await setup(instances => {
@@ -183,7 +254,8 @@ test("HTTP abort and drain keep accepted work exclusive and discard queued abort
     expect((await post("/auth/me", {}, owner.cookie)).status).toBe(503);
     expect((await host.fetch(new Request(`${origin}/health`))).status).toBe(503);
     expect(drained).toBe(false); hold = false; gate.release();
-    expect((await read).status).toBe(200); await draining; expect(drained).toBe(true);
+    // This request was still buffering when drain began, so it was never admitted.
+    expect((await read).status).toBe(503); await draining; expect(drained).toBe(true);
   } finally { hold = false; gate.release(); }
 });
 

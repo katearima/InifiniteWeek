@@ -1,11 +1,13 @@
 import { httpPolicy } from "@mit-sdg/sync-engine-http/policy";
 
+export const requestBodyBytes = 768 * 1024;
+
 /** Public categories follow ConceptBox; see LICENSES/ConceptBox.txt. */
 export function infinitePlansPolicy(publicOrigin: string) {
   return httpPolicy({
     publicOrigin,
     basePath: "/api",
-    limits: { requestBodyBytes: 768 * 1024 },
+    limits: { requestBodyBytes },
     publicErrors: {
       INVALID_PICTURE: "INVALID_REQUEST", PICTURE_GROUP_NOT_FOUND: "NOT_FOUND", PICTURE_NOT_MEMBER: "FORBIDDEN",
       NOT_SIGNED_IN: "UNAUTHORIZED", INVALID_CREDENTIALS: "UNAUTHORIZED",

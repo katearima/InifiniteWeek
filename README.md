@@ -1,6 +1,8 @@
 # InifiniteWeek
 Event tracker
 
+See [setup, production preview, and deployment instructions](App_infinite/README.md).
+
 
 ## Design
 
