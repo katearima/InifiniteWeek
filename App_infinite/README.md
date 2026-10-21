@@ -80,13 +80,53 @@ The app uses hash navigation, so reloading a URL such as `/#calendar` keeps
 that view. Production requires `bun run build` before starting with
 `NODE_ENV=production`; the platform supplies that environment setting.
 
-For an isolated check using temporary databases on the documented local MongoDB
-server, run:
+## Run tests
+
+Complete the first-time setup above, then run these commands from `App_infinite/`.
+Start Podman with `podman machine start` if it is not already running, then start
+MongoDB and run all tests:
+
+```sh
+bun run db:up
+bun --env-file=.env.example test tests
+```
+
+The explicit environment file supplies `MONGODB_TEST_URL` for the default local
+MongoDB container, even if your existing `.env` is missing that setting.
+The tests create fresh, uniquely named
+databases and clean them up afterward, keeping application data separate. You
+do not need to run the app or reset its database first.
+
+To run just one part of the suite:
+
+```sh
+bun --env-file=.env.example test tests/concepts
+bun --env-file=.env.example test tests/compositions
+bun --env-file=.env.example test tests/http
+bun --env-file=.env.example test tests/frontend
+bun --env-file=.env.example test tests/production
+```
+
+To run one test file, for example:
+
+```sh
+bun --env-file=.env.example test tests/concepts/EventPublishing.test.ts
+```
+
+For a custom local MongoDB setup, add `MONGODB_TEST_URL` with your test server's
+connection URL to `.env`, then use `bun test tests` or the `test:concepts`,
+`test:compositions`, `test:http`, and `test:frontend` scripts.
+
+If many tests fail with **Set MONGODB_TEST_URL to the local test server**, the
+test connection setting was not loaded. Use the explicit `--env-file` command
+above for the default local setup. `cp -n .env.example .env` does not add missing
+settings to an existing `.env`.
+
+Run the design, generated-artifact, and TypeScript checks separately:
 
 ```sh
 bun run check:design
 bun run check
-bun --env-file=.env.example test tests
 ```
 
 The production test builds through the root script, starts the production server
