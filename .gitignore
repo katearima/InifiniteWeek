@@ -10,5 +10,8 @@
 AGENTS.md
 /App_infinite/design/changes.md
 
-# Keep the demo recording locally, outside future commits.
-/Video/user-journey.mov
+# # Keep the demo recording locally, outside future commits.
+# /Video/user-journey.mov
+
+# # Keep visual design slides out of the main branch.
+# /Design Study Slides/
