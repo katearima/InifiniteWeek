@@ -25,8 +25,8 @@ a calendar. It was built for MIT 6.1040 (Software Design, Fall 2026).
   discussion activity. Opening a notification goes straight to the event or the
   highlighted reply.
 
-The [core user journey](user_jouerney.md) walks through these features with two users,
-starting from an empty database.
+The [user journey](user_jouerney.md) walks through these features step by step with two
+users, Keti and Tako, whose accounts, groups, and events already exist.
 
 ## Quick start
 
