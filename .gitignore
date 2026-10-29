@@ -10,5 +10,10 @@
 AGENTS.md
 /App_infinite/design/changes.md
 
+# Claude Code instructions, project skill link, and sync-engine skill work records.
+/CLAUDE.md
+/.claude/
+/App_infinite/.sync-engine/
+
 # Keep the demo recordings locally, outside future commits.
 /Video/
