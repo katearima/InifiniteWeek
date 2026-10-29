@@ -10,6 +10,7 @@ function proxy(request: Request) {
 const server = Bun.serve({
   hostname: process.env.HOST ?? "127.0.0.1",
   port: Number(process.env.PORT ?? 8080),
+  idleTimeout: 45, // Outlast the backend's 30 s request deadline.
   routes: { "/": homepage, "/api/*": proxy, "/health": proxy },
 });
 console.log(`InfiniteWeek frontend listening on ${server.url} (open http://localhost:${server.port})`);

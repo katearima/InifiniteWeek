@@ -87,36 +87,72 @@ test("posting and departure serialize in both orders without restoring access or
   } finally { release(); }
 });
 
-test("comments and flattened replies notify only Going members, including organizers, and never their author", async () => {
+test("top-level comments notify Going members and the organizer once, never their author", async () => {
   const { api, instances, register, owner, member, other, event, group } = await fixture();
-  const interested = await register("interested"), notGoing = await register("notgoing");
-  for (const account of [interested, notGoing]) ok(await api.groups.join({ session: account.session, group }));
-  for (const account of [owner, member]) ok(await api.plans.mark({ session: account.session, event, intent: "GOING" }));
+  const going = await register("going"), interested = await register("interested"), notGoing = await register("notgoing");
+  for (const account of [going, interested, notGoing]) ok(await api.groups.join({ session: account.session, group }));
+  ok(await api.plans.mark({ session: going.session, event, intent: "GOING" }));
   ok(await api.plans.mark({ session: interested.session, event, intent: "INTERESTED" }));
   ok(await api.plans.mark({ session: notGoing.session, event, intent: "NOT_GOING" }));
   await instances.EventMarking.mark({ user: other.user, event, intent: "GOING" }); // Nonmember defense.
   const root = ok(await api.comments.post({ session: member.session, event, text: "Question" })).comment;
-  const firstInbox = ok(await api.notifications.list({ session: owner.session }));
+  const firstInbox = ok(await api.notifications.list({ session: owner.session })); // Unmarked organizer.
   expect(firstInbox.notifications).toMatchObject([{ event, comment: root, message: "New comment.", read: false }]);
   expect(firstInbox.unreadCount).toBe(1);
+  expect(ok(await api.notifications.list({ session: going.session })).notifications).toMatchObject([{ comment: root, message: "New comment." }]);
   for (const account of [member, interested, notGoing, other]) {
     expect(await instances.Notifying._getNotifications({ user: account.user })).toEqual([]);
   }
+  ok(await api.plans.mark({ session: owner.session, event, intent: "GOING" }));
+  const second = ok(await api.comments.post({ session: member.session, event, text: "Again" })).comment;
+  expect(ok(await api.notifications.list({ session: owner.session })).notifications.filter(row => row.comment === second)).toHaveLength(1);
+  ok(await api.comments.post({ session: owner.session, event, text: "From the organizer" }));
+  expect(ok(await api.notifications.list({ session: owner.session })).notifications).toHaveLength(2);
+  ok(await api.comments.edit({ session: member.session, comment: root, text: "Edited question" }));
+  expect(ok(await api.notifications.list({ session: going.session })).notifications).toHaveLength(3);
+});
+
+test("replies notify only the replied-to author, whatever their intention", async () => {
+  const { api, instances, register, owner, member, event, group } = await fixture();
+  const going = await register("going");
+  ok(await api.groups.join({ session: going.session, group }));
+  ok(await api.plans.mark({ session: going.session, event, intent: "GOING" }));
+  ok(await api.plans.mark({ session: member.session, event, intent: "INTERESTED" }));
+  const root = ok(await api.comments.post({ session: member.session, event, text: "Question" })).comment;
+  const before = (await instances.Notifying._getNotifications({ user: going.user })).length;
   const reply = ok(await api.comments.reply({ session: owner.session, comment: root, text: "Answer" })).comment;
-  const nested = ok(await api.comments.reply({ session: member.session, comment: reply, text: "Thanks" })).comment;
+  expect(ok(await api.notifications.list({ session: member.session })).notifications)
+    .toMatchObject([{ event, comment: reply, message: "New reply to your comment.", read: false }]);
+  expect(await instances.Notifying._getNotifications({ user: going.user })).toHaveLength(before);
+  const ownerBefore = (await instances.Notifying._getNotifications({ user: owner.user })).length;
+  const nested = ok(await api.comments.reply({ session: going.session, comment: reply, text: "Thanks" })).comment;
   const discussion = ok(await api.comments.list({ session: member.session, event })).comments;
   expect(discussion.find(row => row.comment === root)?.parent).toBe("");
   for (const id of [reply, nested]) expect(discussion.find(row => row.comment === id)?.parent).toBe(root);
-  expect(ok(await api.notifications.list({ session: member.session })).notifications).toMatchObject([{ comment: reply, message: "New reply." }]);
-  expect(ok(await api.notifications.list({ session: owner.session })).notifications.map(row => row.comment).sort()).toEqual([root, nested].sort());
-  ok(await api.comments.edit({ session: owner.session, comment: reply, text: "Edited answer" }));
+  const ownerInbox = await instances.Notifying._getNotifications({ user: owner.user });
+  expect(ownerInbox).toHaveLength(ownerBefore + 1);
+  expect(ownerInbox.filter(row => row.target === nested)).toMatchObject([{ message: "New reply to your comment." }]);
   expect(ok(await api.notifications.list({ session: member.session })).notifications).toHaveLength(1);
-  ok(await api.plans.mark({ session: owner.session, event, intent: "INTERESTED" }));
-  ok(await api.comments.reply({ session: member.session, comment: root, text: "Another" }));
-  expect(ok(await api.notifications.list({ session: owner.session })).notifications).toHaveLength(2);
+  ok(await api.comments.reply({ session: member.session, comment: root, text: "Talking to myself" }));
+  expect(ok(await api.notifications.list({ session: member.session })).notifications).toHaveLength(1);
   ok(await api.events.remove({ session: owner.session, event }));
   ok(await api.comments.reply({ session: owner.session, comment: root, text: "After cancellation" }));
-  expect(ok(await api.notifications.list({ session: member.session })).notifications.filter(row => row.message === "New reply.")).toHaveLength(2);
+  expect(ok(await api.notifications.list({ session: member.session })).notifications.filter(row => row.message === "New reply to your comment.")).toHaveLength(2);
+});
+
+test("departed authors receive no reply notices; Not Going still clears reply notices", async () => {
+  const { api, instances, register, owner, member, event, group } = await fixture();
+  const leaver = await register("leaver");
+  ok(await api.groups.join({ session: leaver.session, group }));
+  const mine = ok(await api.comments.post({ session: leaver.session, event, text: "Before leaving" })).comment;
+  const yours = ok(await api.comments.post({ session: member.session, event, text: "Staying" })).comment;
+  ok(await api.groups.leave({ session: leaver.session, group }));
+  ok(await api.comments.reply({ session: owner.session, comment: mine, text: "Too late" }));
+  expect(await instances.Notifying._getNotifications({ user: leaver.user })).toEqual([]);
+  ok(await api.comments.reply({ session: owner.session, comment: yours, text: "Answer" }));
+  expect(ok(await api.notifications.list({ session: member.session })).notifications).toHaveLength(1);
+  ok(await api.plans.mark({ session: member.session, event, intent: "NOT_GOING" }));
+  expect(ok(await api.notifications.list({ session: member.session })).notifications).toEqual([]);
 });
 
 test("reply permissions and validation refuse without comments or notices; thread deletion clears only its targets", async () => {
@@ -140,7 +176,7 @@ test("reply permissions and validation refuse without comments or notices; threa
   expect(await api.comments.remove({ session: observer.session, comment: root })).toEqual({ error: "NOT_COMMENT_MODERATOR" });
   ok(await api.comments.remove({ session: owner.session, comment: reply }));
   expect(ok(await api.comments.list({ session: owner.session, event })).comments.map(row => row.comment).sort()).toEqual([root, another].sort());
-  expect(ok(await api.notifications.list({ session: observer.session })).notifications.map(row => row.comment).sort()).toEqual([root, another].sort());
+  expect(ok(await api.notifications.list({ session: observer.session })).notifications.map(row => row.comment)).toEqual([root]);
   const keep = ok(await api.comments.post({ session: member.session, event, text: "Unrelated" })).comment;
   ok(await api.events.revise({ session: owner.session, event, ...fields, location: "New room" }));
   ok(await api.comments.remove({ session: member.session, comment: root }));
@@ -171,7 +207,7 @@ test("cleanup failure prevents thread deletion; later deletion failure leaves no
   ok(await api.comments.reply({ session: member.session, comment: root, text: "Reply" }));
   expect(await api.comments.remove({ session: member.session, comment: root })).toEqual({ error: "INTERNAL_ERROR" });
   expect(ok(await api.comments.list({ session: owner.session, event })).comments).toHaveLength(2);
-  expect(ok(await api.notifications.list({ session: owner.session })).notifications).toHaveLength(2);
+  expect(ok(await api.notifications.list({ session: owner.session })).notifications).toHaveLength(1);
   failCleanup = false; failRemoval = true;
   expect(await api.comments.remove({ session: member.session, comment: root })).toEqual({ error: "INTERNAL_ERROR" });
   expect(ok(await api.comments.list({ session: owner.session, event })).comments).toHaveLength(2);

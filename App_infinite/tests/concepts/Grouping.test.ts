@@ -104,3 +104,14 @@ test("pending status is a total boolean projection across request decisions", as
   await c.approve({ user: "owner", group, requester: "bob" });
   expect(await c._isPending({ user: "bob", group })).toEqual({ pending: false });
 });
+test("group text is trimmed and bounded; refused creation adds no group", async () => {
+  const { c, db } = await setup();
+  const { group } = await c.createGroup({ user: "owner", name: "  Book club \n", description: " Reading ", policy: "OPEN" });
+  expect(await c._getGroupDetails({ group })).toEqual([{ name: "Book club", description: "Reading", policy: "OPEN" }]);
+  const before = await db.collection("grouping.groups").countDocuments();
+  for (const change of [{ name: "  " }, { name: "x".repeat(121) }, { description: "x".repeat(2001) }]) {
+    await expect(c.createGroup({ user: "owner", name: "Club", description: "", policy: "OPEN", ...change })).rejects.toThrow(G.InvalidGroupDetails);
+  }
+  expect(await db.collection("grouping.groups").countDocuments()).toBe(before);
+  await c.createGroup({ user: "owner", name: "x".repeat(120), description: "x".repeat(2000), policy: "OPEN" });
+});

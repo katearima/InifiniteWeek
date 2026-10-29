@@ -22,6 +22,7 @@ export class DeleteNotMember extends Error {}
 export class DeleteNotLastMember extends Error {}
 export class PictureGroupNotFound extends Error {}
 export class PictureNotMember extends Error {}
+export class InvalidGroupDetails extends Error {}
 export interface GroupDocument<User> {
   _id: Group; name: string; description: string; policy: JoiningPolicy;
   members: User[]; joinRequests: User[]; revision: number; deleted?: boolean;
@@ -35,8 +36,13 @@ export class GroupingConcept<User extends string> {
     this.groups = database.collection(`${name.toLowerCase()}.groups`);
   }
   async createGroup({ user, name, description, policy }: { user: User; name: string; description: string; policy: JoiningPolicy }) {
+    // Limits apply to supplied text only; stored legacy groups are never rechecked.
+    const text = { name: name.trim(), description: description.trim() };
+    if (!text.name || text.name.length > 120 || text.description.length > 2000) {
+      throw new InvalidGroupDetails("A group needs a name of up to 120 characters, with a description of at most 2000.");
+    }
     const group = crypto.randomUUID() as Group;
-    await this.groups.insertOne({ _id: group, name, description, policy, members: [user], joinRequests: [], revision: 0 });
+    await this.groups.insertOne({ _id: group, ...text, policy, members: [user], joinRequests: [], revision: 0 });
     return { group };
   }
   // Every decision is made from one snapshot. If it changed, recheck authority and all branches.

@@ -44,6 +44,7 @@ Rule: An OPEN group's joinRequests is empty.
 Rule: All members have equal authority to approve or reject requests and change the joining policy.
 Rule: Whenever a group becomes OPEN, all pending requesters become members and their requests are removed as part of the same action. Existing members remain unless explicitly leaving.
 Rule: A refused action leaves the state unchanged.
+Rule: Trimming removes leading and trailing whitespace and line terminators (as JavaScript String.prototype.trim). Name and description supplied to createGroup are trimmed and must be within limits: trimmed name 1 to 120 characters, trimmed description at most 2000 (UTF-16 code units). Accepted values are stored trimmed. Groups stored before these limits are neither normalized nor rechecked; they read back unchanged.
 Rule: All members have equal authority to change the group picture. Picture is initially empty. Empty means no picture; otherwise it is a JPEG data URL, at most 512 KiB decoded, with valid JPEG framing and frame dimensions of 1 through 1600 pixels on each axis. Existing records without a picture read as empty. Membership changes preserve the picture; deletion removes it.
 ```
 
@@ -51,10 +52,13 @@ Rule: All members have equal authority to change the group picture. Picture is i
 
 ```actions
 createGroup(user: User, name: String, description: String, policy: JoiningPolicy) : returns (group: Group)
-  where true
+  where the trimmed name has 1 to 120 characters and the trimmed description at most 2000
   then
-    add a new group with name, description, and policy, whose members contain only user and whose joinRequests is empty
+    add a new group with trimmed name, trimmed description, and policy, whose members contain only user and whose joinRequests is empty
     returns group
+  where the trimmed name is empty or longer than 120 characters, or the trimmed description is longer than 2000
+  then
+    refuses INVALID_GROUP_DETAILS "A group needs a name of up to 120 characters, with a description of at most 2000."
 
 join(user: User, group: Group) : returns (status: JoinStatus)
   where group is not in Groups

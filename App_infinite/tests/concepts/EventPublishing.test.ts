@@ -104,3 +104,21 @@ test("concurrent time revisions retain the immediately preceding committed inter
   const previous = result.start.getTime() === a.start.getTime() ? b : a;
   expect(result).toMatchObject({ timeChanged: true, previousStart: previous.start, previousEnd: previous.end });
 });
+test("text is trimmed and bounded on publish and revise; refusals change nothing; legacy text is not rechecked", async () => {
+  const { c, db, event } = await setup();
+  const { event: padded } = await c.publish({ ...details, title: "  Study  ", description: "\n Notes \n", location: " MIT ", organizer: "owner", group: "group" });
+  expect((await c._getEventDetails({ event: padded }))[0]).toMatchObject({ title: "Study", description: "Notes", location: "MIT" });
+  const bad = [{ title: "   " }, { title: "x".repeat(161) }, { location: "\t" }, { location: "x".repeat(251) }, { description: "x".repeat(5001) }];
+  const before = await db.collection("eventpublishing.events").find().toArray();
+  for (const change of bad) {
+    await expect(c.publish({ ...details, ...change, organizer: "owner", group: "group" })).rejects.toThrow(E.InvalidEventDetails);
+    await expect(c.revise({ ...details, ...change, user: "owner", event })).rejects.toThrow(E.InvalidEventDetails);
+  }
+  await expect(c.revise({ ...details, title: " ", start: details.end, end: details.start, user: "owner", event })).rejects.toThrow(E.InvalidRevisionTime);
+  expect(await db.collection("eventpublishing.events").find().toArray()).toEqual(before);
+  await c.publish({ ...details, title: "x".repeat(160), location: "x".repeat(250), description: "x".repeat(5000), organizer: "owner", group: "group" });
+  await db.collection("eventpublishing.events").updateOne({ _id: event as never }, { $set: { title: "x".repeat(400), location: "  MIT  " } });
+  expect((await c._getEventDetails({ event }))[0]).toMatchObject({ title: "x".repeat(400), location: "  MIT  " });
+  expect(await c.revise({ ...details, title: "Short", user: "owner", event })).toEqual({ timeOrLocationChanged: false });
+  expect((await c._getEventDetails({ event }))[0]).toMatchObject({ title: "Short", location: "MIT" });
+});

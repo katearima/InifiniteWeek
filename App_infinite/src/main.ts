@@ -21,6 +21,8 @@ try {
     hostname: process.env.HOST ?? "127.0.0.1",
     port,
     maxRequestBodySize: 1024 * 1024,
+    // Bun's 10 s default would drop connections before the 30 s request deadline answers.
+    idleTimeout: 45,
     fetch,
   });
   console.log(`Infinite Plans API listening on ${server.url}; browser origin ${publicOrigin}`);

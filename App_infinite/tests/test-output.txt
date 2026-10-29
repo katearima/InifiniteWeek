@@ -1,250 +1,258 @@
-[+] up 1/1
- ✔ Container app_infinite-mongo-1 Healthy                                                                                            0.5s
 bun test v1.4.2 (744846f84)
 
 tests/frontend/navigation.test.ts:
-✓ login replaces a stale route with Explore and clears route-specific state [10.48ms]
-✓ register replaces a stale route with Explore and clears route-specific state [2.06ms]
-✓ failed authentication preserves the form and route [2.01ms]
-✓ authenticated reload focuses after rendering; same-event notifications move to the exact reply [2.37ms]
-✓ calendar controls preserve date/view across navigation, filter plans, and scroll only on view entry [3.53ms]
+(pass) a transient refresh failure keeps the event page and its discussion [10.47ms]
+(pass) saving an edit revises its own event even if the page lost it, and never publishes [2.96ms]
+(pass) a different account seen on refresh clears the previous account's drafts [2.08ms]
+(pass) a focus refresh skipped while a dialog is open runs once the dialog closes [14.55ms]
+(pass) login replaces a stale route with Explore and clears route-specific state [2.18ms]
+(pass) register replaces a stale route with Explore and clears route-specific state [1.91ms]
+(pass) failed authentication preserves the form and route [4.07ms]
+(pass) authenticated reload focuses after rendering; same-event notifications move to the exact reply [2.28ms]
+(pass) calendar controls preserve date/view across navigation, filter plans, and scroll only on view entry [2.83ms]
 
 tests/frontend/calendar.test.ts:
-✓ calendar starts on Monday, spans six weeks, and retains past canceled plans [0.20ms]
-✓ multi-day events appear on overlapping days but not their midnight end day [0.12ms]
-✓ editor dates retain local wall time
-✓ Calendar renders the latest time change, then only cancellation when canceled [22.41ms]
-✓ day/week navigation crosses years and clamps months while preserving the selected day [0.10ms]
-✓ hourly segments clip overnight events and exclude the midnight end date [0.10ms]
-✓ overlap groups use stable lanes; nested events reuse lanes and adjacent groups use full width [0.58ms]
-✓ short and late-night blocks stay clickable without covering neighboring blocks [0.10ms]
-✓ local day boundaries handle DST and repeated-hour events remain visible [36.28ms]
-✓ Day and Week render accessible hourly blocks, current status, and period empty states [7.76ms]
+(pass) calendar starts on Monday, spans six weeks, and retains past canceled plans [0.21ms]
+(pass) multi-day events appear on overlapping days but not their midnight end day [0.09ms]
+(pass) editor dates retain local wall time [0.01ms]
+(pass) Calendar renders the latest time change, then only cancellation when canceled [24.41ms]
+(pass) day/week navigation crosses years and clamps months while preserving the selected day [0.12ms]
+(pass) hourly segments clip overnight events and exclude the midnight end date [0.12ms]
+(pass) overlap groups use stable lanes; nested events reuse lanes and adjacent groups use full width [0.67ms]
+(pass) short and late-night blocks stay clickable without covering neighboring blocks [0.11ms]
+(pass) local day boundaries handle DST and repeated-hour events remain visible [68.94ms]
+(pass) Day and Week render accessible hourly blocks, current status, and period empty states [6.02ms]
 
 tests/frontend/discussion.test.ts:
-✓ one-level threads group chronological replies without moving roots or nesting reply-to-reply [0.15ms]
-✓ comment destinations encode safely and retain exact targets within the same event [0.13ms]
-✓ discussion renders escaped bubbles, one reply indentation, and a focused-target highlight [4.62ms]
-✓ thread deletion warning explicitly includes other authors' replies and notification cleanup [1.43ms]
+(pass) one-level threads group chronological replies without moving roots or nesting reply-to-reply [0.13ms]
+(pass) comment destinations encode safely and retain exact targets within the same event [0.11ms]
+(pass) discussion renders escaped bubbles, one reply indentation, and a focused-target highlight [4.47ms]
+(pass) thread deletion warning explicitly includes other authors' replies and notification cleanup [1.72ms]
 
 tests/compositions/Concurrency.test.ts:
-{"requestId":"0cdd3434-1595-48e7-a80c-48788f14061f","level":"warn","message":"Reaction \"plans.Mark:save#3\" answered a request on \"?\"after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-21T01:45:49.778Z"}
-✓ accepted timed-out marking finishes before cancellation and queued reads [348.80ms]
-{"requestId":"10c6d66b-42a0-401a-a417-2e27a53e32f5","level":"warn","message":"Reaction \"accounts.Me:known#2\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-21T01:45:49.976Z"}
-✓ active abort preserves accepted work; queued expiry never logs out; drain waits [169.97ms]
+{"requestId":"d7342870-8e50-4653-aeac-8b972d12da4b","level":"warn","message":"Reaction \"plans.Mark:save#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-29T03:15:04.999Z"}
+(pass) accepted timed-out marking finishes before cancellation and queued reads [441.92ms]
+{"requestId":"6d0d06af-c026-436c-8b33-b0fd35b020b2","level":"warn","message":"Reaction \"accounts.Me:known#2\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-29T03:15:05.279Z"}
+(pass) active abort preserves accepted work; queued expiry never logs out; drain waits [246.72ms]
 
 tests/compositions/Groups.test.ts:
-✓ approval journey from empty database: discover, request, admit, publish, mark [364.40ms]
-✓ reject, policy opening, last-member admission, and empty-group rejoining [457.68ms]
-✓ departure clears every group intention including canceled marks, and rejoining restores none [383.32ms]
-✓ unknown groups refuse and corrupt roster/request usernames cause opaque failures [279.23ms]
+(pass) approval journey from empty database: discover, request, admit, publish, mark [534.88ms]
+(pass) reject, policy opening, last-member admission, and empty-group rejoining [523.72ms]
+(pass) departure clears every group intention including canceled marks, and rejoining restores none [368.63ms]
+(pass) unknown groups refuse and corrupt roster/request usernames cause opaque failures [315.06ms]
 
 tests/compositions/Notifications.test.ts:
-✓ only actual schedule/location changes and cancellation notify positive intentions once per recipient [577.62ms]
-✓ successive event changes reach the inbox while Calendar retains only the latest schedule change [590.72ms]
-✓ inbox controls are recipient-owned and counts reflect individual read, all read, and dismissal [593.29ms]
-✓ positive intention transitions preserve notices; Not Going/removal clear them and re-saving restores none [699.05ms]
-✓ departure and group deletion clear relevant inboxes; inaccessible entries are hidden defensively [578.27ms]
-{"action":"send","actionId":"72b083d7-59de-4a19-bbfb-6b4e05daf87f","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:45:55.298Z"}
-{"requestId":"33295b9c-bb33-46b2-b059-024225e43bdf","level":"warn","message":"Reaction \"events.Revise:owner#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-21T01:45:55.298Z"}
-✓ delivery failure retains the event with no false success or duplicate notifications on identical retry [810.36ms]
-{"action":"clear","actionId":"4da05f34-6c66-433e-b6a7-ee6ba9cc72a0","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:45:55.874Z"}
-{"action":"clear","actionId":"f0b93d26-ef23-4e29-8106-ebfdbd96e06c","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:45:55.878Z"}
-{"action":"leave","actionId":"8c5c0d94-3bd8-451a-b340-efb94ca60e1f","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:45:55.886Z"}
-✓ notification cleanup failure preserves marks/membership; later failure leaves cleared notices [574.14ms]
-{"requestId":"c500174e-b4e9-4bcd-97e4-02faa06114eb","level":"warn","message":"Reaction \"events.Revise:owner#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-21T01:45:56.447Z"}
-✓ timed-out event updates retain exclusion through delivery before queued departure clears notices [567.80ms]
-{"action":"send","actionId":"fb22c945-757e-48bf-a83e-ce47bcc6955b","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:45:56.986Z"}
-{"action":"send","actionId":"a09d0660-50fc-4bb7-a3cc-72b8cf1ff943","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:45:56.987Z"}
-{"requestId":"a1e6827a-304b-4fb2-ad5c-df07d43d4b8c","level":"warn","message":"Reaction \"events.Remove:owner#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-21T01:45:56.987Z"}
-✓ cancellation delivery failure retains canceled state and refuses a second cancellation [536.61ms]
-✓ Not Going, unmarked members, and nonmember marks never receive event-change notices [533.68ms]
+(pass) only actual schedule/location changes and cancellation notify positive intentions once per recipient [677.06ms]
+(pass) successive event changes reach the inbox while Calendar retains only the latest schedule change [611.42ms]
+(pass) inbox controls are recipient-owned and counts reflect individual read, all read, and dismissal [634.57ms]
+(pass) positive intention transitions preserve notices; Not Going/removal clear them and re-saving restores none [580.77ms]
+(pass) departure and group deletion clear relevant inboxes; inaccessible entries are hidden defensively [583.85ms]
+{"action":"send","actionId":"792e7236-1f67-4798-80d7-d4b6d1a4d9ee","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:10.691Z"}
+{"requestId":"ba2f084c-2f0a-4210-bf93-180fc560ed5a","level":"warn","message":"Reaction \"events.Revise:owner#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-29T03:15:10.691Z"}
+(pass) delivery failure retains the event with no false success or duplicate notifications on identical retry [575.16ms]
+{"action":"clear","actionId":"57ee422c-4d10-4fdb-a206-2f8f89128cd2","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:11.288Z"}
+{"action":"clear","actionId":"4cc858eb-47be-40d9-b844-208793cd8fb3","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:11.292Z"}
+{"action":"leave","actionId":"d43e9404-5b19-4b42-946b-78b189ac747d","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:11.300Z"}
+(pass) notification cleanup failure preserves marks/membership; later failure leaves cleared notices [609.77ms]
+{"requestId":"06038933-e2d3-4184-9071-e74ef07e4e68","level":"warn","message":"Reaction \"events.Revise:owner#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-29T03:15:11.948Z"}
+(pass) timed-out event updates retain exclusion through delivery before queued departure clears notices [679.41ms]
+{"action":"send","actionId":"69807326-3cbe-4b76-a4bf-c93664df6ec1","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:12.522Z"}
+{"action":"send","actionId":"d349edc3-a132-434a-937d-a8c2a1fd5f25","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:12.523Z"}
+{"requestId":"69f3d22b-6d8a-47a9-969f-262f57f6e04b","level":"warn","message":"Reaction \"events.Remove:owner#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-29T03:15:12.523Z"}
+(pass) cancellation delivery failure retains canceled state and refuses a second cancellation [540.87ms]
+(pass) Not Going, unmarked members, and nonmember marks never receive event-change notices [549.27ms]
 
 tests/compositions/Events.test.ts:
-✓ member-only publication/discovery, owner edits, and private attendee identities [307.33ms]
-✓ cancellation hides discovery, preserves saved plans, refuses changes, and permits removal [325.07ms]
-✓ ordering spans groups and resolves equal dates by event identity, including past dates [280.47ms]
-{"action":"respond","actionId":"e9d7db94-c299-4ba9-a42c-331a9a852f7e","error":{"name":"FormerFault"},"level":"error","message":"Reaction\"events.Details:readable#2\": consequence input former failed","timestamp":"2026-10-21T01:45:58.746Z"}
-{"action":"respond","actionId":"3d8f2ffa-ad8a-456a-bf2b-3e3913125a80","error":{"name":"FormerFault"},"level":"error","message":"Reaction\"events.Explore#2\": consequence input former failed","timestamp":"2026-10-21T01:45:58.750Z"}
-{"action":"respond","actionId":"a79ff1e7-5be5-48e1-b7c7-0da6ca9b22ee","error":{"name":"FormerFault"},"level":"error","message":"Reaction\"plans.MyPlans#2\": consequence input former failed","timestamp":"2026-10-21T01:45:58.753Z"}
-✓ corrupt organizer/attendee references fail rather than dropping rows [305.23ms]
-{"action":"respond","actionId":"2c2faa30-6049-4e50-ba29-718f29ca904c","error":{"name":"Error"},"level":"error","message":"Reaction \"plans.MyPlans#2\": consequence input former failed","timestamp":"2026-10-21T01:45:59.030Z"}
-✓ saved missing event fails but inaccessible entries are excluded [277.17ms]
+(pass) member-only publication/discovery, owner edits, and private attendee identities [384.15ms]
+(pass) cancellation hides discovery, preserves saved plans, refuses changes, and permits removal [391.14ms]
+(pass) ordering spans groups and resolves equal dates by event identity, including past dates [459.25ms]
+{"action":"respond","actionId":"b3b310d0-2352-49ea-ac11-0f659930ebf7","error":{"name":"FormerFault"},"level":"error","message":"Reaction \"events.Details:readable#2\": consequence input former failed","timestamp":"2026-10-29T03:15:14.685Z"}
+{"action":"respond","actionId":"20c5d563-5d36-495d-852f-2e633b4e29f2","error":{"name":"FormerFault"},"level":"error","message":"Reaction \"events.Explore#2\": consequence input former failed","timestamp":"2026-10-29T03:15:14.690Z"}
+{"action":"respond","actionId":"3be385a2-d395-49c1-93ff-ed246a1c07e2","error":{"name":"FormerFault"},"level":"error","message":"Reaction \"plans.MyPlans#2\": consequence input former failed","timestamp":"2026-10-29T03:15:14.694Z"}
+(pass) corrupt organizer/attendee references fail rather than dropping rows [378.38ms]
+{"action":"respond","actionId":"967a8579-7161-4b45-9c0d-ab4f4ceebdd9","error":{"name":"Error"},"level":"error","message":"Reaction \"plans.MyPlans#2\": consequence input former failed","timestamp":"2026-10-29T03:15:15.021Z"}
+(pass) saved missing event fails but inaccessible entries are excluded [326.99ms]
 
 tests/compositions/Pictures.test.ts:
-✓ picture APIs preserve event privacy and group discovery; membership controls edits and no notices are sent [448.16ms]
-{"action":"setPicture","actionId":"15ece103-c5e5-4502-b169-87b1f11f0083","error":{"name":"Error"},"level":"error","message":"Consequenceaction faulted","timestamp":"2026-10-21T01:45:59.642Z"}
-{"action":"setPicture","actionId":"f52d5526-7a7f-49c9-aae5-0f262741a46e","error":{"name":"Error"},"level":"error","message":"Consequenceaction faulted","timestamp":"2026-10-21T01:45:59.652Z"}
-✓ a failed upload keeps the created resource; a lost acknowledgement requires reading the committed picture [175.77ms]
+(pass) picture APIs preserve event privacy and group discovery; membership controls edits and no notices are sent [576.26ms]
+{"action":"setPicture","actionId":"907abbe4-bc74-4e53-a3cd-9258ab6cc9bf","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:15.778Z"}
+{"action":"setPicture","actionId":"c9ea004a-6e3f-4380-a2e0-77f783fc7814","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:15.792Z"}
+(pass) a failed upload keeps the created resource; a lost acknowledgement requires reading the committed picture [197.37ms]
 
 tests/compositions/Serialized.test.ts:
-✓ timeout ends caller waiting but exclusion lasts until the flow is idle [11.46ms]
-✓ active timeout and abort do not admit queued requests until work finishes [11.19ms]
-✓ drain completes admitted requests, refuses new ones, and waits for quiescence [0.15ms]
-✓ unexpected invocation failures do not poison the queue, and queued inputs are snapshots [0.18ms]
-✓ failed idle confirmation closes admission instead of overlapping uncertain work [0.14ms]
+(pass) timeout ends caller waiting but exclusion lasts until the flow is idle [10.93ms]
+(pass) active timeout and abort do not admit queued requests until work finishes [11.28ms]
+(pass) drain completes admitted requests, refuses new ones, and waits for quiescence [0.15ms]
+(pass) unexpected invocation failures do not poison the queue, and queued inputs are snapshots [0.20ms]
+(pass) failed idle confirmation closes admission instead of overlapping uncertain work [0.13ms]
 
 tests/compositions/Accounts.test.ts:
-✓ empty database signup/login/me/logout and invalid credentials [411.23ms]
-✓ expired sessions and unknown registered subjects are refused [153.73ms]
-✓ malformed and impersonation inputs run no session action [15.53ms]
-{"action":"set","actionId":"f194f37e-d219-4868-9298-71d9795f0c6e","error":{"name":"Error"},"level":"error","message":"Consequence actionfaulted","timestamp":"2026-10-21T01:46:00.292Z"}
-{"action":"start","actionId":"eb887a5b-57fa-497a-abc7-e2123612ea43","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:00.402Z"}
-✓ password-setup failure reserves username; session-start failure recovers through login [244.95ms]
-✓ audit output redacts passwords and session credentials [139.83ms]
+(pass) empty database signup/login/me/logout and invalid credentials [414.76ms]
+(pass) expired sessions and unknown registered subjects are refused [184.99ms]
+(pass) malformed and impersonation inputs run no session action [18.70ms]
+{"action":"set","actionId":"fd2b2bb8-b3e4-4cce-b62d-726c91f6e1bf","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:16.483Z"}
+{"action":"start","actionId":"47ad4541-0bcc-4504-82ae-380ade190736","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:16.621Z"}
+(pass) password-setup failure reserves username; session-start failure recovers through login [389.89ms]
+(pass) audit output redacts passwords and session credentials [201.47ms]
 
 tests/compositions/Departure.test.ts:
-{"action":"clearMarks","actionId":"a414f026-e568-49be-ae06-91ce6f8b5068","error":{"name":"Error"},"level":"error","message":"Consequenceaction faulted","timestamp":"2026-10-21T01:46:00.954Z"}
-{"action":"leave","actionId":"67187985-e6dd-4513-b378-adeecca8d98c","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:00.971Z"}
-{"action":"leave","actionId":"3d3c4d8d-b8d3-4c92-8768-f6ec32dd86ce","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:01.002Z"}
-✓ cleanup failure retains membership; departure failure retains cleared marks; lost response is retryable [355.99ms]
-✓ publish accepted first commits before departure evaluates organized events [196.36ms]
-✓ departure accepted first blocks later publication after clearing and leaving [168.29ms]
+{"action":"clearMarks","actionId":"838f4e2c-d082-4515-bdb5-7761050a7ee6","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:17.382Z"}
+{"action":"leave","actionId":"14ab264a-c04c-468a-88a4-4d70b7d8612f","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:17.395Z"}
+{"action":"leave","actionId":"192372c3-e077-4a25-af6b-68e1e683bcec","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:17.421Z"}
+(pass) cleanup failure retains membership; departure failure retains cleared marks; lost response is retryable [385.43ms]
+(pass) publish accepted first commits before departure evaluates organized events [204.52ms]
+(pass) departure accepted first blocks later publication after clearing and leaving [177.08ms]
 
 tests/compositions/DeleteGroup.test.ts:
-✓ deletion requires sole membership, canceled events, and clears marks and requests [397.56ms]
-✓ deleted default group stays absent after bootstrap [197.84ms]
-✓ concurrent concept join/delete cannot delete a newly shared group [305.03ms]
-{"action":"clearMarks","actionId":"40c652e2-458f-4996-b66e-4f79a81a253d","error":{"name":"Error"},"level":"error","message":"Consequenceaction faulted","timestamp":"2026-10-21T01:46:02.473Z"}
-✓ clear failure preserves documented partial effects and supports retry [201.54ms]
-{"action":"deleteGroup","actionId":"d7a3428d-a07a-4c48-9b76-8c1eeca543d4","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:02.682Z"}
-✓ delete failure preserves documented partial effects and supports retry [208.89ms]
+(pass) deletion requires sole membership, canceled events, and clears marks and requests [588.16ms]
+(pass) deleted default group stays absent after bootstrap [204.19ms]
+(pass) concurrent concept join/delete cannot delete a newly shared group [315.97ms]
+{"action":"clearMarks","actionId":"fbad8c76-7561-4c12-bfee-5a4c16155b27","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:19.115Z"}
+(pass) clear failure preserves documented partial effects and supports retry [201.19ms]
+{"action":"deleteGroup","actionId":"d668e3ce-aec4-462b-9af4-19b253854d07","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:19.324Z"}
+(pass) delete failure preserves documented partial effects and supports retry [211.59ms]
 
 tests/compositions/Contracts.test.ts:
-✓ selected endpoint inventory and required/default contracts match authored routes without database access [8.43ms]
-✓ all selected routes reject acting-user overrides and missing required fields before any action [64.03ms]
-✓ generated read-back contains the selected flat views and formers [2.10ms]
+(pass) selected endpoint inventory and required/default contracts match authored routes without database access [9.77ms]
+(pass) all selected routes reject acting-user overrides and missing required fields before any action [83.69ms]
+(pass) generated read-back contains the selected flat views and formers [2.87ms]
 
 tests/compositions/Validation.test.ts:
-✓ malformed event dates and enums run no concepts; valid reverse dates reach the owner [180.37ms]
-✓ unknown and inaccessible events share refusals for all protected operations [302.99ms]
+(pass) malformed event dates and enums run no concepts; valid reverse dates reach the owner [218.67ms]
+(pass) unknown and inaccessible events share refusals for all protected operations [343.58ms]
 
 tests/compositions/Discussion.test.ts:
-✓ discussion checks event access, author edits, and organizer moderation [462.91ms]
-✓ canceled events keep discussions open; departure retains comments and rejoining restores controls [439.57ms]
-✓ blank and oversized comments fail without changes; duplicate posts are distinct and notify Going members [435.80ms]
-✓ posting and departure serialize in both orders without restoring access or removing authored comments [464.09ms]
-✓ comments and flattened replies notify only Going members, including organizers, and never their author [969.96ms]
-✓ reply permissions and validation refuse without comments or notices; thread deletion clears only its targets [830.07ms]
-{"action":"clearTargets","actionId":"dbbbc65e-dfee-40af-9f8b-2f5206e4d17c","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:07.314Z"}
-{"action":"remove","actionId":"d7bc9b34-2554-4f3e-97bc-9f738d72f20d","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:07.326Z"}
-✓ cleanup failure prevents thread deletion; later deletion failure leaves notices cleared and permits retry [476.04ms]
-✓ reply and root deletion serialize through delivery; reversing order refuses the reply [505.31ms]
-{"action":"send","actionId":"e5f479af-a6fb-4c84-b945-7413262a6ad3","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:08.243Z"}
-{"requestId":"fff22621-1e3c-41ef-b8b5-b78b9b606e60","level":"warn","message":"Reaction \"comments.Post:readable#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-21T01:46:08.243Z"}
-✓ comment delivery failure retains the post and reports failure instead of false success [398.98ms]
+(pass) discussion checks event access, author edits, and organizer moderation [512.14ms]
+(pass) canceled events keep discussions open; departure retains comments and rejoining restores controls [478.12ms]
+(pass) blank and oversized comments fail without changes; duplicate posts are distinct and notify Going members [434.94ms]
+(pass) posting and departure serialize in both orders without restoring access or removing authored comments [439.62ms]
+(pass) top-level comments notify Going members and the organizer once, never their author [891.38ms]
+(pass) replies notify only the replied-to author, whatever their intention [652.08ms]
+(pass) departed authors receive no reply notices; Not Going still clears reply notices [593.04ms]
+(pass) reply permissions and validation refuse without comments or notices; thread deletion clears only its targets [607.37ms]
+{"action":"clearTargets","actionId":"f86009de-a472-4658-b068-d3fed3b05822","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:25.037Z"}
+{"action":"remove","actionId":"8363524b-719b-4370-ae17-a34c188e49bc","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:25.048Z"}
+(pass) cleanup failure prevents thread deletion; later deletion failure leaves notices cleared and permits retry [442.24ms]
+(pass) reply and root deletion serialize through delivery; reversing order refuses the reply [483.06ms]
+{"action":"send","actionId":"eeb4a7fa-c825-49ac-9f39-e7ac9ae85297","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:25.974Z"}
+{"requestId":"9cd9e2f8-af16-41d7-a7be-329869c64475","level":"warn","message":"Reaction \"comments.Post:readable#3\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-29T03:15:25.974Z"}
+(pass) comment delivery failure retains the post and reports failure instead of false success [432.61ms]
 
 tests/http/Frontend.test.ts:
-✓ production serving confines assets to dist and preserves API/health responses [33.30ms]
+(pass) production serving confines assets to dist and preserves API/health responses [37.18ms]
 
 tests/http/Hosting.test.ts:
-✓ HTTP picture uploads accept the maximum image size, enforce ownership, and retain images after invalid replacements [343.28ms]
-✓ HTTP signup/login/logout use secure cookies and omit issued secrets [412.79ms]
-✓ cookie identity wins over body credentials; hostile origins and user overrides are rejected [265.77ms]
-✓ HTTP group/event journey enforces membership, dates, ownership, and cancellation [312.95ms]
-{"action":"createGroup","actionId":"ff464ecd-2da0-4bb6-bbf9-ae1507b7a9f4","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-21T01:46:09.788Z"}
-✓ expired cookies clear and unexpected action faults remain opaque [162.13ms]
-✓ health and request framing: unavailable database, malformed JSON, limits and methods [107.89ms]
-✓ real Bun listener serves the generated typed HTTP client [177.87ms]
-✓ a stalled body never occupies the queue, times out, and cancels its stream [539.25ms]
-✓ abort and shutdown cancel incomplete bodies without waiting for uploads [33.29ms]
-✓ real Bun listener recovers from a client that never finishes its HTTP body [535.00ms]
-✓ streamed bodies enforce the byte limit even without an honest content length [33.16ms]
-✓ HTTP timeout preserves accepted work and serializes subsequent cancellation [1166.81ms]
-{"requestId":"96df666a-dbff-46da-a506-730929b52e1c","level":"warn","message":"Reaction \"accounts.Me:known#2\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-21T01:46:12.553Z"}
-✓ HTTP abort and drain keep accepted work exclusive and discard queued aborted work [168.14ms]
-✓ all protected HTTP routes bind absent credentials and reject acting-user overrides [73.16ms]
-✓ main entrypoint starts HTTP and exits cleanly on SIGTERM [423.51ms]
-✓ HTTP group deletion enforces membership and last-member authority [318.24ms]
-✓ members receive the latest time-change notice in details, discovery, and saved plans [460.86ms]
+(pass) HTTP picture uploads accept the maximum image size, enforce ownership, and retain images after invalid replacements [456.08ms]
+(pass) HTTP signup/login/logout use secure cookies and omit issued secrets [364.12ms]
+(pass) cookie identity wins over body credentials; hostile origins and user overrides are rejected [303.57ms]
+(pass) HTTP group/event journey enforces membership, dates, ownership, and cancellation [333.82ms]
+{"action":"createGroup","actionId":"8ef9bc19-a3f1-4499-b838-56a606df6d58","error":{"name":"Error"},"level":"error","message":"Consequence action faulted","timestamp":"2026-10-29T03:15:27.641Z"}
+(pass) expired cookies clear and unexpected action faults remain opaque [157.26ms]
+(pass) health and request framing: unavailable database, malformed JSON, limits and methods [92.38ms]
+(pass) real Bun listener serves the generated typed HTTP client [153.08ms]
+(pass) a stalled body never occupies the queue, times out, and cancels its stream [534.15ms]
+(pass) abort and shutdown cancel incomplete bodies without waiting for uploads [49.48ms]
+(pass) real Bun listener recovers from a client that never finishes its HTTP body [545.78ms]
+(pass) streamed bodies enforce the byte limit even without an honest content length [42.61ms]
+(pass) HTTP timeout preserves accepted work and serializes subsequent cancellation [1223.87ms]
+{"requestId":"ac822c7b-0124-4314-bffe-2dace16c61cd","level":"warn","message":"Reaction \"accounts.Me:known#2\" answered a request on \"?\" after it stopped pending. Reactions that can answer the same request must partition their conditions; registration order never decides. A timeout can also make an answer arrive late.","timestamp":"2026-10-29T03:15:30.431Z"}
+(pass) HTTP abort and drain keep accepted work exclusive and discard queued aborted work [146.10ms]
+(pass) all protected HTTP routes bind absent credentials and reject acting-user overrides [58.32ms]
+(pass) main entrypoint starts HTTP and exits cleanly on SIGTERM [424.05ms]
+(pass) HTTP group deletion enforces membership and last-member authority [383.08ms]
+(pass) members receive the latest time-change notice in details, discovery, and saved plans [401.91ms]
 
 tests/http/Bootstrap.test.ts:
-✓ fresh database gets exactly one joinable campus group, even with concurrent initialization [43.36ms]
-✓ restarting preserves campus membership, requests, policy and revision [11.30ms]
+(pass) fresh database gets exactly one joinable campus group, even with concurrent initialization [41.52ms]
+(pass) restarting preserves campus membership, requests, policy and revision [11.82ms]
 
 tests/concepts/EventMarking.test.ts:
-✓ intentions replace each other; queries sort and filter; other users remain independent [25.92ms]
-✓ clear removes every supplied intention atomically and is idempotent [32.50ms]
-✓ unknown identities are opaque; empty queries and refused removal change no state [34.41ms]
-✓ concurrent initial creation keeps all marks; competing removals have one winner [64.60ms]
-✓ competing intentions still leave exactly one current mark for a pair [18.64ms]
+(pass) intentions replace each other; queries sort and filter; other users remain independent [24.95ms]
+(pass) clear removes every supplied intention atomically and is idempotent [31.02ms]
+(pass) unknown identities are opaque; empty queries and refused removal change no state [14.49ms]
+(pass) concurrent initial creation keeps all marks; competing removals have one winner [63.54ms]
+(pass) competing intentions still leave exactly one current mark for a pair [20.92ms]
 
 tests/concepts/EventPublishing.test.ts:
-✓ publication and revision preserve identity, group, organizer; cancellation retains details [16.77ms]
-✓ refusal precedence and refused writes leave events unchanged [18.86ms]
-✓ past dates remain visible and query order is start then identity [13.89ms]
-✓ competing cancellations have one winner; revision cannot resurrect cancellation [16.75ms]
-✓ event collection is one ordered array including canceled events and empty groups [16.95ms]
-✓ latest actual time change is atomic, persistent, and survives other edits and cancellation [23.92ms]
-✓ legacy events read safely and acquire history on their next time change [20.03ms]
-✓ concurrent time revisions retain the immediately preceding committed interval [18.77ms]
+(pass) publication and revision preserve identity, group, organizer; cancellation retains details [27.79ms]
+(pass) refusal precedence and refused writes leave events unchanged [25.31ms]
+(pass) past dates remain visible and query order is start then identity [17.66ms]
+(pass) competing cancellations have one winner; revision cannot resurrect cancellation [27.24ms]
+(pass) event collection is one ordered array including canceled events and empty groups [15.99ms]
+(pass) latest actual time change is atomic, persistent, and survives other edits and cancellation [17.44ms]
+(pass) legacy events read safely and acquire history on their next time change [12.86ms]
+(pass) concurrent time revisions retain the immediately preceding committed interval [13.68ms]
+(pass) text is trimmed and bounded on publish and revise; refusals change nothing; legacy text is not rechecked [25.55ms]
 
 tests/concepts/Sessioning.test.ts:
-✓ Sessioning > its principle: Maya stays signed in until she signs out, leaves a session unused for a week, or reaches 90 days [59.52ms]
-✓ Sessioning > a session's identity is 32 random bytes in base64url [12.98ms]
-✓ Sessioning > every use sets lastUsed to now, so the week of idleness counts from the latest use [15.96ms]
-✓ Sessioning > a refused use or end changes no session [16.65ms]
-✓ Sessioning > Sessioning refuses to use or end an unknown or ended session [19.53ms]
-✓ Sessioning > of two ends of one session at once, Sessioning accepts one and refuses the other with NOT_SIGNED_IN [20.51ms]
-✓ expiry boundaries refuse use and end even while expired documents remain [103.52ms]
+(pass) Sessioning > its principle: Maya stays signed in until she signs out, leaves a session unused for a week, or reaches 90 days [61.50ms]
+(pass) Sessioning > a session's identity is 32 random bytes in base64url [14.36ms]
+(pass) Sessioning > every use sets lastUsed to now, so the week of idleness counts from the latest use [14.83ms]
+(pass) Sessioning > a refused use or end changes no session [17.24ms]
+(pass) Sessioning > Sessioning refuses to use or end an unknown or ended session [18.82ms]
+(pass) Sessioning > of two ends of one session at once, Sessioning accepts one and refuses the other with NOT_SIGNED_IN [15.85ms]
+(pass) expiry boundaries refuse use and end even while expired documents remain [91.62ms]
 
 tests/concepts/Registering.test.ts:
-✓ Registering > its principle: Sam finds Maya by her username, and Ben registers another when hers is taken [27.56ms]
-✓ Registering > a username must have 3 to 32 ASCII letters, digits, underscores, or hyphens [32.45ms]
-✓ Registering > usernames are case-sensitive, so `Maya` is a different username from `maya` [29.62ms]
-✓ Registering > of two registrations of one username at once, one succeeds and the other is refused with USERNAME_TAKEN [19.12ms]
-✓ Registering > _username and _byUsername return no row for an unknown user or username [5.34ms]
-✓ same instance restores the unique index after its collection is dropped [25.41ms]
-✓ a removed username index is restored before another account can be inserted [25.39ms]
-✓ preexisting duplicate data refuses further registration without deleting accounts [38.47ms]
+(pass) Registering > its principle: Sam finds Maya by her username, and Ben registers another when hers is taken [20.06ms]
+(pass) Registering > a username must have 3 to 32 ASCII letters, digits, underscores, or hyphens [18.75ms]
+(pass) Registering > usernames are case-sensitive, so `Maya` is a different username from `maya` [15.08ms]
+(pass) Registering > of two registrations of one username at once, one succeeds and the other is refused with USERNAME_TAKEN [19.06ms]
+(pass) Registering > _username and _byUsername return no row for an unknown user or username [6.11ms]
+(pass) same instance restores the unique index after its collection is dropped [32.31ms]
+(pass) a removed username index is restored before another account can be inserted [28.16ms]
+(pass) preexisting duplicate data refuses further registration without deleting accounts [48.40ms]
 
 tests/concepts/Pictures.test.ts:
-✓ picture validation accepts bounded JPEG and rejects URLs, active content, malformed framing, oversized bytes and dimensions [1.73ms]
-✓ group picture authority, persistence, replacement, idempotent clearing and deletion [30.49ms]
-✓ event covers preserve metadata and history, serialize owner transitions and survive cancellation [31.77ms]
+(pass) picture validation accepts bounded JPEG and rejects URLs, active content, malformed framing, oversized bytes and dimensions [3.28ms]
+(pass) group picture authority, persistence, replacement, idempotent clearing and deletion [33.51ms]
+(pass) event covers preserve metadata and history, serialize owner transitions and survive cancellation [32.52ms]
+(pass) parameterless JPEG markers before start-of-scan are accepted [0.40ms]
 
 tests/concepts/Commenting.test.ts:
-✓ comment principle: trim, author-only edit, identical edit, permanent removal [19.01ms]
-✓ invalid comment text and duplicate identities leave state unchanged [14.79ms]
-✓ comments persist across instances with stable ties and atomic concurrent creation [20.66ms]
-✓ replies flatten under the root, persist, preserve references on edit, and delete with the thread [27.13ms]
-✓ reply refusals and unauthorized edits preserve all comment state [23.09ms]
-✓ failed descendant deletion retains the root so the thread can be removed on retry [24.90ms]
+(pass) comment principle: trim, author-only edit, identical edit, permanent removal [21.54ms]
+(pass) invalid comment text and duplicate identities leave state unchanged [36.95ms]
+(pass) comments persist across instances with stable ties and atomic concurrent creation [27.44ms]
+(pass) replies flatten under the root, persist, preserve references on edit, and delete with the thread [28.27ms]
+(pass) reply refusals and unauthorized edits preserve all comment state [20.80ms]
+(pass) failed descendant deletion retains the root so the thread can be removed on retry [17.31ms]
 
 tests/concepts/Storage.test.ts:
-✓ all constructors only acquire collection handles and never perform database operations [0.11ms]
-✓ registration and session index initialization retries after failure [0.30ms]
-✓ a fresh MongoDB client reads all eight concepts persisted by other instances [351.04ms]
-✓ failed group/event/mark writes preserve the previous state and propagate the storage failure [46.88ms]
+(pass) all constructors only acquire collection handles and never perform database operations [0.15ms]
+(pass) registration and session index initialization retries after failure [0.36ms]
+(pass) a fresh MongoDB client reads all eight concepts persisted by other instances [262.87ms]
+(pass) failed group/event/mark writes preserve the previous state and propagate the storage failure [29.51ms]
 
 tests/concepts/Grouping.test.ts:
-✓ approval, rejection, refusals preserve state, and open policy admits everyone pending [28.96ms]
-✓ last member departure opens the group and admits pending users, or retains an empty group [18.76ms]
-✓ unknown groups have exact refusals and empty query answers [18.24ms]
-✓ queries sort identities and a fresh instance reads persisted memberships [15.21ms]
-✓ concurrent duplicate join and competing approval/rejection each have one winner [20.46ms]
-✓ concurrent last-member departure and policy opening never lose pending members [22.86ms]
-✓ concurrent OPEN joins add a member exactly once [17.86ms]
-✓ pending status is a total boolean projection across request decisions [21.72ms]
+(pass) approval, rejection, refusals preserve state, and open policy admits everyone pending [33.98ms]
+(pass) last member departure opens the group and admits pending users, or retains an empty group [20.71ms]
+(pass) unknown groups have exact refusals and empty query answers [15.21ms]
+(pass) queries sort identities and a fresh instance reads persisted memberships [11.40ms]
+(pass) concurrent duplicate join and competing approval/rejection each have one winner [17.84ms]
+(pass) concurrent last-member departure and policy opening never lose pending members [19.51ms]
+(pass) concurrent OPEN joins add a member exactly once [14.29ms]
+(pass) pending status is a total boolean projection across request decisions [13.22ms]
+(pass) group text is trimmed and bounded; refused creation adds no group [15.88ms]
 
 tests/concepts/Notifying.test.ts:
-✓ inbox principle: recipient-only read, repeat read, read all, and dismissal [24.23ms]
-✓ atomic inbox cleanup preserves unrelated subjects and users; stable ordering and persistence [25.27ms]
-✓ concurrent inbox transitions across instances do not lose entries or bypass duplicate refusal [65.20ms]
-✓ target cleanup removes notices across users, preserves event notices, and tolerates legacy data and repetition [27.50ms]
-✓ foreign operations and duplicate sends leave the original inbox unchanged [14.29ms]
+(pass) inbox principle: recipient-only read, repeat read, read all, and dismissal [18.42ms]
+(pass) atomic inbox cleanup preserves unrelated subjects and users; stable ordering and persistence [23.03ms]
+(pass) concurrent inbox transitions across instances do not lose entries or bypass duplicate refusal [61.94ms]
+(pass) target cleanup removes notices across users, preserves event notices, and tolerates legacy data and repetition [31.46ms]
+(pass) foreign operations and duplicate sends leave the original inbox unchanged [15.92ms]
 
 tests/concepts/Authenticating.test.ts:
-✓ Authenticating > its principle: Ben authenticates with his password, and Leo can neither guess it nor set a new one [561.99ms]
-✓ Authenticating > a user with no password is refused like a wrong password [8.74ms]
-✓ Authenticating > Authenticating stores an argon2id hash, never the password [118.34ms]
-✓ Authenticating > a password must have 8 to 128 characters, and _acceptable returns the same answer as set [8.68ms]
-✓ Authenticating > of two passwords set for one user at once, one is set and the other is refused with PASSWORD_SET [129.59ms]
-✓ equal passwords produce different verifiers, and both boundary lengths authenticate unchanged [601.64ms]
+(pass) Authenticating > its principle: Ben authenticates with his password, and Leo can neither guess it nor set a new one [605.56ms]
+(pass) Authenticating > a user with no password is refused like a wrong password [6.51ms]
+(pass) Authenticating > Authenticating stores an argon2id hash, never the password [164.69ms]
+(pass) Authenticating > a password must have 8 to 128 characters, and _acceptable returns the same answer as set [12.73ms]
+(pass) Authenticating > of two passwords set for one user at once, one is set and the other is refused with PASSWORD_SET [186.74ms]
+(pass) equal passwords produce different verifiers, and both boundary lengths authenticate unchanged [784.56ms]
 
 tests/production/Production.test.ts:
-✓ root build/start serve the production app and preserve accounts, plans and pictures across restart [1952.68ms]
+(pass) root build/start serve the production app and preserve accounts, plans and pictures across restart [2371.47ms]
 
- 155 pass
+ 164 pass
  0 fail
- 1413 expect() calls
+ 1469 expect() calls
+Ran 164 tests across 29 files. [33.52s]

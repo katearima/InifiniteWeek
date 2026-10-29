@@ -9,10 +9,17 @@ export const recipients = view("notification recipients for (event) excluding (o
   where(EventPublishing._getEventDetails({ event }).is({ group, organizer }),
     EventMarking._getMarksByEvent({ event }).is({ user, intent }), is.among(intent, ["GOING", "INTERESTED"]),
     no(EventPublishing._getEventDetails({ event }).is({ organizer: user })), isMember({ user, group }))).many();
-const commentRecipients = view("recipients of comment (comment) on (event)", ({ event, comment }, { user }, { group }) =>
+const commentRecipients = view("recipients of comment (comment) on (event)", ({ event, comment }, { user }, { group }) => [
   where(EventPublishing._getEventDetails({ event }).is({ group }),
     EventMarking._getMarksByEvent({ event }).is({ user, intent: "GOING" }),
-    Commenting._getComment({ comment }).is.not({ author: user }), isMember({ user, group }))).many();
+    Commenting._getComment({ comment }).is.not({ author: user }), isMember({ user, group })),
+  where(EventPublishing._getEventDetails({ event }).is({ group, organizer: user }),
+    no(EventMarking._getMarksByEvent({ event }).is({ user, intent: "GOING" })),
+    Commenting._getComment({ comment }).is.not({ author: user }), isMember({ user, group })),
+]).many();
+const replyRecipient = view("author of (parent) to notify of reply (comment)", ({ parent, comment }, { user, event }) =>
+  where(Commenting._getComment({ comment: parent }).is({ author: user, subject: event }),
+    Commenting._getComment({ comment }).is.not({ author: user }), canReadEvent({ user, event }))).many();
 const rows = former("inbox for (user)", ({ user }, { notification, event, message, createdAt, read, title, comment }) =>
   each(Notifying._getNotifications({ user }).is({ notification, subject: event, message, createdAt, read, target: comment }))
     .where(canReadEvent({ user, event }), EventPublishing._getEventDetails({ event }).is({ title }))
@@ -54,9 +61,8 @@ const CommentPosted = reaction(({ event, author, comment, user, notification, at
   when(Commenting.post({ author, subject: event }).responds({ comment }))
     .where(commentRecipients({ event, comment }).is({ user }), now(at), compute(computations.newIdentity, {}, notification))
     .then(Notifying.send({ user, subject: event, target: comment, message: "New comment.", notification, at })));
-const CommentReplied = reaction(({ event, author, comment, user, notification, at }) =>
-  when(Commenting.reply({ author }).responds({ comment }))
-    .where(Commenting._getComment({ comment }).is({ subject: event }), commentRecipients({ event, comment }).is({ user }),
-      now(at), compute(computations.newIdentity, {}, notification))
-    .then(Notifying.send({ user, subject: event, target: comment, message: "New reply.", notification, at })));
-export const composition = { recipients, commentRecipients, rows, unread, List, Read, ReadAll, Dismiss, EventRevised, EventCanceled, CommentPosted, CommentReplied };
+const CommentReplied = reaction(({ event, author, parent, comment, user, notification, at }) =>
+  when(Commenting.reply({ author, parent }).responds({ comment }))
+    .where(replyRecipient({ parent, comment }).is({ user, event }), now(at), compute(computations.newIdentity, {}, notification))
+    .then(Notifying.send({ user, subject: event, target: comment, message: "New reply to your comment.", notification, at })));
+export const composition = { recipients, commentRecipients, replyRecipient, rows, unread, List, Read, ReadAll, Dismiss, EventRevised, EventCanceled, CommentPosted, CommentReplied };

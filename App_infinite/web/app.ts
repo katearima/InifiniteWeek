@@ -21,7 +21,7 @@ export function createAppOptions(api = defaultApi) {
     const replyingTo = ref(""), replyText = ref(""), highlightedComment = ref("");
     const threadedComments = computed(() => discussionRows(comments.value));
     const pendingReplyCount = computed(() => replyCount(comments.value, pendingComment.value));
-    let pendingCommentFocus = false;
+    let pendingCommentFocus = false, focusMissed = false, editTarget = "";
     const modal = ref<"group" | "event" | "picture" | "leave" | "cancel" | "delete" | "comment-delete" | null>(null), editing = ref(false), dialog = ref<HTMLDialogElement | null>(null);
     const eventPictures = ref<Record<string, string>>({}), groupPictures = ref<Record<string, string>>({});
     const pictureDraft = ref(""), pictureBusy = ref(false), pictureError = ref(""), pictureLoadError = ref("");
@@ -50,9 +50,9 @@ export function createAppOptions(api = defaultApi) {
     const calendarWidth = computed(() => timelineWidth(timeline.value, calendarView.value));
     const calendarHasEvents = computed(() => calendarView.value === "month" ? calendar.value.some(cell => cell.events.length) : timeline.value.some(cell => cell.segments.length));
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone.replaceAll("_", " ");
-    const today = localDateTime(new Date()).slice(0, 10);
+    const today = ref(localDateTime(new Date()).slice(0, 10));
     const title = computed(() => ({ explore: "Explore events", groups: "Find your people", plans: "My events", calendar: "Your calendar", notifications: "Your notifications", group: group.value?.name ?? "Group", event: "Event details" })[tab.value] ?? "Explore events");
-    const subtitle = computed(() => ({ explore: "Good plans start with your communities.", groups: "Join a community. See what’s happening together.", plans: "The plans you’re going to, and the ones you’re considering.", calendar: "A little space for everything you’re looking forward to.", notifications: "Changes to the events you’re planning around.", group: group.value?.description ?? "", event: "All the details, in one place." })[tab.value] ?? "");
+    const subtitle = computed(() => ({ explore: "Good plans start with your communities.", groups: "Join a community. See what’s happening together.", plans: "The plans you’re going to, and the ones you’re considering.", calendar: "A little space for everything you’re looking forward to.", notifications: "Event changes, new comments, and replies to you.", group: group.value?.description ?? "", event: "All the details, in one place." })[tab.value] ?? "");
     function groupName(id: string) { return groups.value.find(g => g.group === id)?.name ?? "Your group"; }
     const date = (value: string) => new Date(value).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
     const time = (value: string) => new Date(value).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -67,14 +67,19 @@ export function createAppOptions(api = defaultApi) {
       error.value = cause instanceof Error ? cause.message : "Something went wrong. Please try again.";
     }
     async function refresh() {
-      const ticket = ++version; loading.value = true; error.value = "";
-      eventPictures.value = {}; groupPictures.value = {}; pictureLoadError.value = "";
+      const ticket = ++version; loading.value = true; error.value = ""; focusMissed = false;
+      pictureLoadError.value = ""; today.value = localDateTime(new Date()).slice(0, 10);
       try {
         const account = await api.auth.me({});
         if (ticket !== version) return;
         if ("error" in account) {
           if (account.error === "UNAUTHORIZED") { reset(); return; }
           await read(Promise.resolve(account), "check your session"); return;
+        }
+        if (me.value && me.value.user !== account.user) {
+          // Another tab signed in as someone else; drop this account's drafts and views first.
+          reset(); search.value = ""; notice.value = `You're now signed in as ${account.username}.`;
+          return await refresh();
         }
         me.value = account;
         const [allGroups, plans, inbox] = await Promise.all([read(api.groups.list({})), read(api.plans.list({})), read(api.notifications.list({}))]);
@@ -117,7 +122,14 @@ export function createAppOptions(api = defaultApi) {
             bubble.scrollIntoView({ block: "center", behavior: "auto" });
           } else notice.value = "This comment is no longer available.";
         }
-      } catch (cause) { if (ticket === version) { group.value = null; event.value = null; events.value = []; comments.value = []; fail(cause); } }
+      } catch (cause) {
+        if (ticket !== version) return;
+        // Only a destination that is gone clears the page; transient failures keep what is shown.
+        if (cause instanceof ApiError && (cause.code === "NOT_FOUND" || cause.code === "FORBIDDEN")) {
+          group.value = null; event.value = null; events.value = []; comments.value = []; closeModal();
+        }
+        fail(cause);
+      }
       finally { if (ticket === version || !me.value) { loading.value = false; checked.value = true; } }
     }
     async function route() {
@@ -165,7 +177,10 @@ export function createAppOptions(api = defaultApi) {
       pictureVersion++; pictureDraft.value = ""; pictureBusy.value = false; pictureError.value = "";
       if (pictureInput.value) pictureInput.value.value = "";
     }
-    function closeModal() { dialog.value?.close(); modal.value = null; pendingComment.value = null; clearPictureDraft(); }
+    function closeModal() {
+      dialog.value?.close(); modal.value = null; pendingComment.value = null; clearPictureDraft();
+      if (focusMissed && me.value && !busy.value) void refresh(); // Run the focus refresh this dialog postponed.
+    }
     async function openModal(kind: NonNullable<typeof modal.value>) {
       clearPictureDraft(); error.value = ""; modal.value = kind; await nextTick(); dialog.value?.showModal();
     }
@@ -175,13 +190,13 @@ export function createAppOptions(api = defaultApi) {
       const picture = pictureDraft.value;
       let message = "Your group is ready. Invite someone to join.";
       await act(async () => {
-        const result = await read(api.groups.create({ ...groupForm }), "create the group");
+        const result = await read(api.groups.create({ ...groupForm, name: groupForm.name.trim(), description: groupForm.description.trim() }), "create the group");
         if (picture && !await uploadCreatedPicture("group", result.group, picture)) message = "Your group was created. Its picture update could not be confirmed. Check its current picture before retrying.";
         go("group", result.group);
       }, () => message);
     }
     function newEvent(existing?: EventRow) {
-      editing.value = !!existing;
+      editing.value = !!existing; editTarget = existing?.event ?? "";
       const start = new Date(); start.setDate(start.getDate() + 1); start.setHours(18, 0, 0, 0);
       Object.assign(eventForm, existing ? { ...existing, start: localDateTime(new Date(existing.start)), end: localDateTime(new Date(existing.end)) } : { group: group.value?.member ? group.value.group : myGroups.value[0]?.group ?? "", title: "", description: "", location: "", start: localDateTime(start), end: localDateTime(new Date(start.getTime() + 3600000)) });
       void openModal("event");
@@ -196,7 +211,7 @@ export function createAppOptions(api = defaultApi) {
       if (!selected) { error.value = "Join a group before publishing an event."; return; }
       const fields = { title: eventForm.title.trim(), description: eventForm.description.trim(), location: eventForm.location.trim(), start: start.toISOString(), end: end.toISOString() };
       await act(async () => {
-        if (editing.value && event.value) await read(api.events.revise({ event: event.value.event, ...fields }), "update the event");
+        if (editing.value) await read(api.events.revise({ event: editTarget as EventRow["event"], ...fields }), "update the event");
         else {
           const result = await read(api.events.publish({ group: selected.group, ...fields }), "publish the event");
           if (picture && !await uploadCreatedPicture("event", result.event, picture)) message = "Your event was published. Its cover update could not be confirmed. Check its current cover before retrying.";
@@ -219,6 +234,7 @@ export function createAppOptions(api = defaultApi) {
           } catch (cause) {
             if (ticket !== version) return;
             if (cause instanceof ApiError && cause.code === "UNAUTHORIZED") { fail(cause); return; }
+            delete (job.kind === "group" ? groupPictures.value : eventPictures.value)[job.id];
             pictureLoadError.value = "Some pictures could not be loaded. Refresh this view to try again.";
           }
         }
@@ -262,17 +278,18 @@ export function createAppOptions(api = defaultApi) {
         else error.value = "Picture update could not be confirmed. Check the current picture before retrying. If it hasn't loaded, refresh this view first.";
       }
     }
+    const unavailable = () => { closeModal(); error.value = "This item is no longer available. Refresh to check its current state."; };
     const join = (g: Group) => act(() => read(api.groups.join({ group: g.group }), "join the group"), g.policy === "OPEN" ? "You’ve joined the group." : "Your request has been sent.", "You’ve already joined or requested to join. Refresh to see your status.");
-    const decide = (person: Person, approve: boolean) => group.value && act(() => read(approve ? api.groups.approve({ group: group.value!.group, requester: person.user }) : api.groups.reject({ group: group.value!.group, requester: person.user })), approve ? "Request approved." : "Request declined.");
-    const changePolicy = () => group.value && act(() => read(api.groups.policy({ group: group.value!.group, policy: group.value!.policy === "OPEN" ? "APPROVAL" : "OPEN" })), "Joining policy updated.");
-    const leave = () => group.value && act(() => read(api.groups.leave({ group: group.value!.group }), "leave the group"), "You left the group. Its events were removed from your plans.", "Cancel every uncanceled event you organize in this group before leaving. Event dates do not change this requirement.");
-    const deleteGroup = () => group.value && act(async () => {
+    const decide = (person: Person, approve: boolean) => !group.value ? unavailable() : act(() => read(approve ? api.groups.approve({ group: group.value!.group, requester: person.user }) : api.groups.reject({ group: group.value!.group, requester: person.user })), approve ? "Request approved." : "Request declined.");
+    const changePolicy = () => !group.value ? unavailable() : act(() => read(api.groups.policy({ group: group.value!.group, policy: group.value!.policy === "OPEN" ? "APPROVAL" : "OPEN" })), "Joining policy updated.");
+    const leave = () => !group.value ? unavailable() : act(() => read(api.groups.leave({ group: group.value!.group }), "leave the group"), "You left the group. Its events were removed from your plans.", "Cancel every uncanceled event you organize in this group before leaving. Event dates do not change this requirement.");
+    const deleteGroup = () => !group.value ? unavailable() : act(async () => {
       await read(api.groups.delete({ group: group.value!.group }), "delete the group");
       go("groups");
     }, "Group deleted. Its events are no longer accessible.", "Only the last member can delete this group. Cancel every uncanceled event you organize here first, then refresh and try again.");
-    const mark = (intent: Intent) => event.value && act(() => read(api.plans.mark({ event: event.value!.event, intent }), "save your response"), intent === "NOT_GOING" ? "Response saved. This event is no longer in My Events." : "Your plans are updated.", "This event has been canceled. You can still remove your response.");
-    const removeMark = () => event.value && act(() => read(api.plans.remove({ event: event.value!.event }), "remove your response"), "Your response was removed.");
-    const cancelEvent = () => event.value && act(() => read(api.events.remove({ event: event.value!.event }), "cancel the event"), "Event canceled. Existing saved plans retain the cancellation notice.", "This event has already been canceled. Refresh to see its status.");
+    const mark = (intent: Intent) => !event.value ? unavailable() : act(() => read(api.plans.mark({ event: event.value!.event, intent }), "save your response"), intent === "NOT_GOING" ? "Response saved. This event is no longer in My Events." : "Your plans are updated.", "This event has been canceled. You can still remove your response.");
+    const removeMark = () => !event.value ? unavailable() : act(() => read(api.plans.remove({ event: event.value!.event }), "remove your response"), "Your response was removed.");
+    const cancelEvent = () => !event.value ? unavailable() : act(() => read(api.events.remove({ event: event.value!.event }), "cancel the event"), "Event canceled. Existing saved plans retain the cancellation notice.", "This event has already been canceled. Refresh to see its status.");
     function editComment(row: CommentRow) { cancelReply(); editingComment.value = row.comment; commentEditText.value = row.text; }
     function cancelCommentEdit() { editingComment.value = ""; commentEditText.value = ""; }
     function startReply(row: CommentRow) { cancelCommentEdit(); replyingTo.value = row.comment; replyText.value = ""; }
@@ -319,7 +336,11 @@ export function createAppOptions(api = defaultApi) {
     function shiftCalendar(offset: number) { calendarDate.value = shiftDate(calendarDate.value, calendarView.value, offset); }
     function calendarToday() { calendarDate.value = startOfDay(new Date()); }
     function firstPlan() { if (saved.value[0]) calendarDate.value = startOfDay(new Date(saved.value[0].start)); }
-    function focus() { if (me.value && !busy.value && !modal.value) void refresh(); }
+    function focus() {
+      if (!me.value) return;
+      if (busy.value || modal.value) focusMissed = true;
+      else void refresh();
+    }
     onMounted(() => { void route(); window.addEventListener("hashchange", route); window.addEventListener("focus", focus); });
     onUnmounted(() => { window.removeEventListener("hashchange", route); window.removeEventListener("focus", focus); });
     return { me, checked, loading, busy, error, notice, search, tab, authMode, username, password, groups, events, saved, group, event, members, requests, attendees, modal, editing, dialog, groupForm, eventForm, myGroups, visibleGroups, groupSections, visibleEvents, calendar, calendarHeading, calendarDate, calendarView, calendarScroller, calendarHours, timeline, calendarTracks, calendarWidth, calendarHasEvents, hourHeight, segmentStyle, segmentLabel, setCalendarView, openCalendarDay, shiftCalendar, calendarToday, timeZone, today, title, subtitle, groupName, date, time, schedule, month, day, initials, refresh, go, authenticate, signOut, closeModal, openModal, newGroup, createGroup, newEvent, saveEvent, join, decide, changePolicy, leave, deleteGroup, mark, removeMark, cancelEvent, firstPlan, comments, notifications, unreadCount, commentText, editingComment, commentEditText, pendingComment, editComment, cancelCommentEdit, postComment, saveComment, confirmCommentRemoval, removeComment, markNotificationRead, markAllRead, dismissNotification, openNotification, threadedComments, pendingReplyCount, replyingTo, replyText, highlightedComment, startReply, cancelReply, postReply, eventPictures, groupPictures, pictureDraft, pictureBusy, pictureError, pictureLoadError, pictureInput, selectPicture, clearPictureDraft, editPicture, savePicture };

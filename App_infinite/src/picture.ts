@@ -16,7 +16,9 @@ export function validatePicture(picture: string): void {
     if (bytes[offset++] !== 0xff) return invalid();
     while (bytes[offset] === 0xff) offset++;
     const marker = bytes[offset++];
-    if (marker === undefined || marker === 0 || marker === 0xd8 || marker === 0xd9 || offset + 2 > bytes.length) return invalid();
+    if (marker === undefined || marker === 0 || marker === 0xd8 || marker === 0xd9) return invalid();
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue; // TEM and RSTn carry no length.
+    if (offset + 2 > bytes.length) return invalid();
     const length = bytes.readUInt16BE(offset);
     if (length < 2 || offset + length > bytes.length - 2) return invalid();
     if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {

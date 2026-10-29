@@ -4,7 +4,7 @@ import type { Db } from "mongodb";
 import { InvalidPicture } from "../../picture.ts";
 import type { User } from "../Registering/Registering.ts";
 import type { Group } from "../Grouping/Grouping.ts";
-import { EventPublishingConcept, InvalidPublicationTime, EventNotFoundForRevision, NotEventOrganizer, EventCanceledForRevision, InvalidRevisionTime, EventNotFoundForRemoval, NotEventOrganizerForRemoval, EventAlreadyCanceled } from "./EventPublishing.ts";
+import { EventPublishingConcept, InvalidPublicationTime, EventNotFoundForRevision, NotEventOrganizer, EventCanceledForRevision, InvalidRevisionTime, EventNotFoundForRemoval, NotEventOrganizerForRemoval, EventAlreadyCanceled, InvalidEventDetails } from "./EventPublishing.ts";
 class EventPublishing extends EventPublishingConcept<User, Group> {}
 export const eventPublishing = registerConcept({
   class: EventPublishing, spec,
@@ -18,6 +18,7 @@ export const eventPublishing = registerConcept({
     EVENT_NOT_FOUND_FOR_REMOVAL: EventNotFoundForRemoval,
     NOT_EVENT_ORGANIZER_FOR_REMOVAL: NotEventOrganizerForRemoval,
     EVENT_ALREADY_CANCELED: EventAlreadyCanceled,
+    INVALID_EVENT_DETAILS: InvalidEventDetails,
   },
   floors: { mongo: ({ database }: { database: Db }, name: string) => new EventPublishing(database, name) },
 });

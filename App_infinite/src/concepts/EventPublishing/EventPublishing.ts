@@ -10,6 +10,7 @@ export class InvalidRevisionTime extends Error {}
 export class EventNotFoundForRemoval extends Error {}
 export class NotEventOrganizerForRemoval extends Error {}
 export class EventAlreadyCanceled extends Error {}
+export class InvalidEventDetails extends Error {}
 interface Details { title: string; description: string; start: Date; end: Date; location: string }
 interface EventDocument<User, Group> extends Details {
   _id: Event; organizer: User; group: Group; canceled: boolean; revision: number;
@@ -19,6 +20,14 @@ interface EventDocument<User, Group> extends Details {
 function validTime(start: Date, end: Date) {
   return start instanceof Date && end instanceof Date && Number.isFinite(start.getTime()) && Number.isFinite(end.getTime()) && start < end;
 }
+/** Trim supplied text and enforce the limits; stored legacy text is never rechecked. */
+function trimmedText({ title, description, location }: Pick<Details, "title" | "description" | "location">) {
+  const text = { title: title.trim(), description: description.trim(), location: location.trim() };
+  if (!text.title || text.title.length > 160 || !text.location || text.location.length > 250 || text.description.length > 5000) {
+    throw new InvalidEventDetails("An event needs a title of up to 160 characters and a location of up to 250, with a description of at most 5000.");
+  }
+  return text;
+}
 export class EventPublishingConcept<User extends string, Group extends string> {
   private readonly events: Collection<EventDocument<User, Group>>;
   constructor(database: Db, name = "EventPublishing") {
@@ -26,8 +35,9 @@ export class EventPublishingConcept<User extends string, Group extends string> {
   }
   async publish({ organizer, group, title, description, start, end, location }: Details & { organizer: User; group: Group }) {
     if (!validTime(start, end)) throw new InvalidPublicationTime("The event must start before it ends.");
+    const text = trimmedText({ title, description, location });
     const event = crypto.randomUUID() as Event;
-    await this.events.insertOne({ _id: event, organizer, group, title, description, start, end, location, canceled: false, revision: 0, timeChanged: false, previousStart: start, previousEnd: end });
+    await this.events.insertOne({ _id: event, organizer, group, ...text, start, end, canceled: false, revision: 0, timeChanged: false, previousStart: start, previousEnd: end });
     return { event };
   }
   async #transition<Result>(event: Event, decide: (row: EventDocument<User, Group> | null) => { row: EventDocument<User, Group>; result: Result }): Promise<Result> {
@@ -44,8 +54,9 @@ export class EventPublishingConcept<User extends string, Group extends string> {
       if (row.organizer !== user) throw new NotEventOrganizer("Only the event's organizer can revise it.");
       if (row.canceled) throw new EventCanceledForRevision("A canceled event cannot be revised.");
       if (!validTime(start, end)) throw new InvalidRevisionTime("The event must start before it ends.");
+      const text = trimmedText({ title, description, location });
       const moved = row.start.getTime() !== start.getTime() || row.end.getTime() !== end.getTime();
-      return { result: { timeOrLocationChanged: moved || row.location !== location }, row: { ...row, title, description, start, end, location,
+      return { result: { timeOrLocationChanged: moved || row.location.trim() !== text.location }, row: { ...row, ...text, start, end,
         ...(moved ? { timeChanged: true, previousStart: row.start, previousEnd: row.end } : {}),
       } };
     });

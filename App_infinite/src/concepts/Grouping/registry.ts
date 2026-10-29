@@ -2,7 +2,7 @@ import { registerConcept } from "@mit-sdg/sync-engine/assembly";
 import spec from "@design/concepts/Grouping.md" with { type: "text" };
 import type { Db } from "mongodb";
 import { InvalidPicture } from "../../picture.ts";
-import { PictureGroupNotFound, PictureNotMember } from "./Grouping.ts";
+import { PictureGroupNotFound, PictureNotMember, InvalidGroupDetails } from "./Grouping.ts";
 import type { User } from "../Registering/Registering.ts";
 
 import { GroupingConcept, DeleteGroupNotFound, DeleteNotMember, DeleteNotLastMember, JoinGroupNotFound, JoinAlreadyMember, RequestAlreadyPending, ApproveGroupNotFound, ApproveNotMember, ApproveRequestNotFound, RejectGroupNotFound, RejectNotMember, RejectRequestNotFound, LeaveGroupNotFound, LeaveNotMember, PolicyGroupNotFound, PolicyNotMember } from "./Grouping.ts";
@@ -10,6 +10,7 @@ class Grouping extends GroupingConcept<User> {}
 export const grouping = registerConcept({
   class: Grouping, spec,
   refusals: {
+    INVALID_GROUP_DETAILS: InvalidGroupDetails,
     INVALID_PICTURE: InvalidPicture,
     PICTURE_GROUP_NOT_FOUND: PictureGroupNotFound,
     PICTURE_NOT_MEMBER: PictureNotMember,

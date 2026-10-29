@@ -78,16 +78,28 @@ notifications.Dismiss at /notifications/dismiss
 
 ## Comment destinations
 
-[Comment recipients](view:notifications.commentRecipients) takes event and comment.
-It selects current group members marked GOING and excludes the comment author.
-An organizer marked GOING is eligible; INTERESTED, NOT_GOING, unmarked users,
-and nonmembers are excluded. Existing time/location/cancellation policy is unchanged.
+[Comment recipients](view:notifications.commentRecipients) takes event and comment
+and serves top-level comments only. It selects current group members marked GOING
+and the event organizer while the organizer is a current member, whatever the
+organizer's own intention. The comment author is always excluded. A GOING organizer
+is selected once, not twice. Other INTERESTED, NOT_GOING, and unmarked users, and
+nonmembers, are excluded. Existing time/location/cancellation policy is unchanged.
+
+[Reply recipient](view:notifications.replyRecipient) takes the replied-to parent
+comment and the new reply. It emits the parent's author with the parent's event
+when that author is not the reply's author and can currently read the event
+(access.canReadEvent). The author's attendance intention does not matter.
+Replying to a reply selects that reply's author, not the thread root's. Nobody
+else is selected: GOING members and the organizer are not notified of replies
+unless they wrote the replied-to comment.
 
 [Comment posted](reaction:notifications.CommentPosted) handles successful
-Commenting.post and sends "New comment." with the event subject and comment target.
+Commenting.post and sends "New comment." with the event subject and comment target
+to each comment recipient.
 [Comment replied](reaction:notifications.CommentReplied) handles successful
-Commenting.reply, reads its subject, and sends "New reply." with the exact reply
-target. Each sends one entry per eligible recipient with fresh identity/flow time.
+Commenting.reply, binding the parent supplied to that action, and sends
+"New reply to your comment." with the event subject and the new reply as target to
+the reply recipient, if any. Each sends one entry per eligible recipient with fresh identity/flow time.
 Expected creation refusals send none. Accepted work waits for delivery; storage
 failure can leave a persisted comment and partial notices, with no automatic retry.
 
@@ -102,4 +114,11 @@ A comment notification's Open comment control marks it read then navigates to
 scrolls to and focuses/highlights the exact bubble, including same-event navigation.
 Missing/deleted targets show an unavailable message; lost membership still hides
 the event. Stale notification read failures refresh the inbox and report unavailable.
-Going-to-Interested keeps prior entries but stops future comment alerts.
+Going-to-Interested keeps prior entries and stops future top-level comment alerts
+for non-organizers; replies to one's own comments still arrive. Delivery is read
+on demand; no polling or push. The client reloads the inbox and unread count
+together with the current view's data on navigation, successful actions, window
+focus, and an explicit Refresh control shown on the inbox and event pages; on the
+event page, Refresh also reloads the event details, discussion, and attendees. A
+window-focus refresh skipped because a dialog was open or an action was running is
+remembered and runs once when that dialog closes.

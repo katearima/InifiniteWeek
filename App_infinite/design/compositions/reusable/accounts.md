@@ -90,7 +90,7 @@ protected route. HTTP supplies its cookie value or null; the typed local client
 also supplies null when the caller omits session. Browser bodies cannot override
 the cookie. These adapters preserve NOT_SIGNED_IN for missing credentials.
 
-All 37 routes are POST/JSON under /api, with a 768 KiB body limit to accommodate
+All 38 routes are POST/JSON under /api, with a 768 KiB body limit to accommodate
 bounded picture uploads. Picture reads and writes use the same authenticated
 serialized boundary as other workflows. The HTTP policy maps expected refusals to
 INVALID_REQUEST (400), UNAUTHORIZED (401), FORBIDDEN (403), NOT_FOUND (404), or

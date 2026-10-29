@@ -238,7 +238,7 @@ export type InfinitePlansWire = {
     output: {
       "event": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["publish"]>>, ["event"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PUBLICATION_TIME" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "INVALID_EVENT_DETAILS" | "INVALID_INPUT" | "INVALID_PUBLICATION_TIME" | "NOT_FOUND" | "NOT_SIGNED_IN" };
   };
   "/events/remove": {
     input: {
@@ -267,7 +267,7 @@ export type InfinitePlansWire = {
     } | {
       "event": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["revise"]>[0], ["event"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["EventPublishing"]["_getEventDetails"]>[0], ["event"]>]>>;
     };
-    error: { error: AppWideError | "EVENT_CANCELED_FOR_REVISION" | "EVENT_NOT_FOUND_FOR_REVISION" | "INVALID_INPUT" | "INVALID_REVISION_TIME" | "NOTIFICATION_ALREADY_EXISTS" | "NOT_EVENT_ORGANIZER" | "NOT_FOUND" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "EVENT_CANCELED_FOR_REVISION" | "EVENT_NOT_FOUND_FOR_REVISION" | "INVALID_EVENT_DETAILS" | "INVALID_INPUT" | "INVALID_REVISION_TIME" | "NOTIFICATION_ALREADY_EXISTS" | "NOT_EVENT_ORGANIZER" | "NOT_FOUND" | "NOT_SIGNED_IN" };
   };
   "/events/set-picture": {
     input: {
@@ -302,7 +302,7 @@ export type InfinitePlansWire = {
     output: {
       "group": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Grouping"]["createGroup"]>>, ["group"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "NOT_SIGNED_IN" };
+    error: { error: AppWideError | "INVALID_GROUP_DETAILS" | "INVALID_INPUT" | "NOT_SIGNED_IN" };
   };
   "/groups/delete": {
     input: {

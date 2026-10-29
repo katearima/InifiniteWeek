@@ -22,6 +22,10 @@ test("malformed event dates and enums run no concepts; valid reverse dates reach
   expect(native.ok).toBe(true);
   const { event } = ok(await app.api.events.publish(base));
   expect(ok(await app.api.events.details({ session: owner.session, event })).event.start).toBe(fields.start);
+  expect(await app.api.events.publish({ ...base, title: "   " })).toEqual({ error: "INVALID_EVENT_DETAILS" });
+  expect(await app.api.events.revise({ session: owner.session, event, ...fields, location: "x".repeat(251) })).toEqual({ error: "INVALID_EVENT_DETAILS" });
+  expect(await app.api.groups.create({ session: owner.session, name: " ", description: "", policy: "OPEN" })).toEqual({ error: "INVALID_GROUP_DETAILS" });
+  expect(ok(await app.api.events.details({ session: owner.session, event })).event).toMatchObject({ title: fields.title, location: fields.location });
 });
 test("unknown and inaccessible events share refusals for all protected operations", async () => {
   const app = await setup(); const owner = await app.register("owner"), stranger = await app.register("stranger");

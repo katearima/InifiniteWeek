@@ -95,11 +95,13 @@ Defined in [EventPublishing](../design/concepts/EventPublishing.md), line 1.
 
 - `publish(organizer: User, group: Group, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns (event: Event)`
   - Refuses `INVALID_PUBLICATION_TIME`: The event must start before it ends.
+  - Refuses `INVALID_EVENT_DETAILS`: An event needs a title of up to 160 characters and a location of up to 250, with a description of at most 5000.
 - `revise(user: User, event: Event, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns (timeOrLocationChanged: Flag)`
   - Refuses `EVENT_NOT_FOUND_FOR_REVISION`: There is no such event to revise.
   - Refuses `NOT_EVENT_ORGANIZER`: Only the event's organizer can revise it.
   - Refuses `EVENT_CANCELED_FOR_REVISION`: A canceled event cannot be revised.
   - Refuses `INVALID_REVISION_TIME`: The event must start before it ends.
+  - Refuses `INVALID_EVENT_DETAILS`: An event needs a title of up to 160 characters and a location of up to 250, with a description of at most 5000.
 - `setPicture(user: User, event: Event, picture: String) : returns ()`
   - Refuses `EVENT_NOT_FOUND_FOR_REVISION`: There is no such event to revise.
   - Refuses `NOT_EVENT_ORGANIZER`: Only the event's organizer can revise it.
@@ -131,6 +133,7 @@ Defined in [Grouping](../design/concepts/Grouping.md), line 1.
 #### Actions
 
 - `createGroup(user: User, name: String, description: String, policy: JoiningPolicy) : returns (group: Group)`
+  - Refuses `INVALID_GROUP_DETAILS`: A group needs a name of up to 120 characters, with a description of at most 2000.
 - `join(user: User, group: Group) : returns (status: JoinStatus)`
   - Refuses `JOIN_GROUP_NOT_FOUND`: There is no such group to join.
   - Refuses `JOIN_ALREADY_MEMBER`: You are already a member of this group.
@@ -354,6 +357,19 @@ Authored path: `access.organizesActiveEvent`.
     EventPublishing._getEventDetails (event) has (canceled: false, organizer: user)
 ```
 
+### author of (parent) to notify of reply (comment)
+
+Authored path: `notifications.replyRecipient`.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 88.
+
+```view
+author of (parent) to notify of reply (comment) — inputs (parent, comment); outputs (user, event); bindings () — answers any number of (user, event)
+  where
+    Commenting._getComment (comment: parent) has (author: user, subject: event)
+    Commenting._getComment (comment) and not (author: user)
+    view "(user) can read (event)" with (event, user)
+```
+
 ### notification recipients for (event) excluding (organizer)
 
 Authored path: `notifications.recipients`.
@@ -379,6 +395,11 @@ recipients of comment (comment) on (event) — inputs (event, comment); outputs 
   where
     EventPublishing._getEventDetails (event) has (group)
     EventMarking._getMarksByEvent (event) has (intent: "GOING", user)
+    Commenting._getComment (comment) and not (author: user)
+    view "(user) belongs to (group)" with (group, user)
+  where
+    EventPublishing._getEventDetails (event) has (group, organizer: user)
+    no EventMarking._getMarksByEvent (event) has (intent: "GOING", user)
     Commenting._getComment (comment) and not (author: user)
     view "(user) belongs to (group)" with (group, user)
 ```
@@ -2393,7 +2414,7 @@ then
 ### notifications.CommentPosted
 
 Authored path: `notifications.CommentPosted`.
-- Covered by [In-app notifications](../design/compositions/notifications.md), line 86.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 96.
 
 ```reaction
 when Commenting.post (author, subject: event, comment)
@@ -2408,17 +2429,16 @@ then
 ### notifications.CommentReplied
 
 Authored path: `notifications.CommentReplied`.
-- Covered by [In-app notifications](../design/compositions/notifications.md), line 88.
+- Covered by [In-app notifications](../design/compositions/notifications.md), line 99.
 
 ```reaction
-when Commenting.reply (author, comment)
+when Commenting.reply (author, parent, comment)
 where
-  Commenting._getComment (comment) has (subject: event)
-  view "recipients of comment (comment) on (event)" with (comment, event) has (user)
+  view "author of (parent) to notify of reply (comment)" with (comment, parent) has (event, user)
   at is the current flow's instant
   notification is newIdentity
 then
-  Notifying.send (at, message: "New reply.", notification, subject: event, target: comment, user)
+  Notifying.send (at, message: "New reply to your comment.", notification, subject: event, target: comment, user)
 ```
 
 ### notifications.Dismiss

@@ -18,12 +18,15 @@ afterEach(() => {
 async function harness(hash: string, signedIn = false, plans: EventRow[] = []) {
   const calls: string[] = [], replaced: string[] = [], focused: string[] = [], scrolled: string[] = [];
   const location = { hash };
-  let failAuthentication = false, rendered = new Set<string>();
+  let failAuthentication = false, rendered = new Set<string>(), account = { user: "member", username: "Maya" };
+  const failing = new Set<string>();
+  let groupRows: unknown[] = [];
   let model!: ReturnType<ReturnType<typeof createAppOptions>["setup"]>;
+  const listeners = new Map<string, () => void>();
   const comments = ["root", "reply"].map(comment => ({ comment, parent: comment === "root" ? "" : "root", text: comment }));
   const globals = {
     location,
-    window: { addEventListener() {}, removeEventListener() {} },
+    window: { addEventListener(name: string, listener: () => void) { listeners.set(name, listener); }, removeEventListener() {} },
     history: {
       replaceState(_state: unknown, _title: string, next: string) { replaced.push(next); location.hash = next; },
       pushState(_state: unknown, _title: string, next: string) { location.hash = next; },
@@ -35,11 +38,14 @@ async function harness(hash: string, signedIn = false, plans: EventRow[] = []) {
   const request = async (path: string) => {
       calls.push(path);
       let value: unknown;
-      if (path === "/auth/login" || path === "/auth/register") {
+      if (failing.has(path)) value = { error: "TIMED_OUT" };
+      else if (path === "/auth/login" || path === "/auth/register") {
         if (failAuthentication) value = { error: "UNAUTHORIZED" };
         else { signedIn = true; value = { user: "member" }; }
-      } else if (path === "/auth/me") value = signedIn ? { user: "member", username: "Maya" } : { error: "UNAUTHORIZED" };
-      else if (path === "/groups/list") value = { groups: [] };
+      } else if (path === "/auth/me") value = signedIn ? account : { error: "UNAUTHORIZED" };
+      else if (path === "/groups/list") value = { groups: groupRows };
+      else if (path === "/events/revise") value = { event: "event" };
+      else if (path === "/events/publish") value = { event: "copy" };
       else if (path === "/plans/list") value = { events: plans };
       else if (path === "/events/explore") value = { events: [] };
       else if (path === "/notifications/list") value = { notifications: [], unreadCount: 0 };
@@ -52,7 +58,7 @@ async function harness(hash: string, signedIn = false, plans: EventRow[] = []) {
   };
   const fakeApi: Record<string, Record<string, () => Promise<unknown>>> = {};
   for (const path of ["/auth/login", "/auth/register", "/auth/me", "/groups/list", "/plans/list", "/events/explore",
-    "/notifications/list", "/notifications/read", "/events/details", "/comments/list", "/events/picture"]) {
+    "/notifications/list", "/notifications/read", "/events/details", "/comments/list", "/events/picture", "/events/revise", "/events/publish"]) {
     const [, namespace, action] = path.split("/");
     (fakeApi[namespace!] ??= {})[action!] = () => request(path);
   }
@@ -75,8 +81,64 @@ async function harness(hash: string, signedIn = false, plans: EventRow[] = []) {
   const deadline = Date.now() + 1000;
   while (!model.checked.value && Date.now() < deadline) await Bun.sleep(1);
   expect(model.checked.value).toBe(true);
-  return { model, location, calls, replaced, focused, scrolled, rejectAuthentication() { failAuthentication = true; } };
+  return { model, location, calls, replaced, focused, scrolled, failing,
+    focusWindow() { listeners.get("focus")?.(); }, rejectAuthentication() { failAuthentication = true; },
+    switchAccount(next: { user: string; username: string }) { account = next; }, setGroups(rows: unknown[]) { groupRows = rows; } };
 }
+
+test("a transient refresh failure keeps the event page and its discussion", async () => {
+  const { model, failing } = await harness("#event/event", true);
+  expect(String(model.event.value?.event)).toBe("event");
+  failing.add("/notifications/list");
+  await model.refresh();
+  expect(String(model.event.value?.event)).toBe("event");
+  expect(model.comments.value).toHaveLength(2);
+  expect(model.error.value).toContain("too long");
+});
+
+test("saving an edit revises its own event even if the page lost it, and never publishes", async () => {
+  const { model, calls, setGroups } = await harness("#event/event", true);
+  setGroups([{ group: "g", name: "G", description: "", policy: "OPEN", member: true, pending: false }]);
+  await model.refresh();
+  const start = new Date(Date.now() + 3600000), end = new Date(Date.now() + 7200000);
+  model.newEvent({ ...model.event.value!, start: start.toISOString(), end: end.toISOString() });
+  Object.assign(model.eventForm, { group: "g", title: "Study", description: "", location: "MIT",
+    start: localDateTime(start), end: localDateTime(end) });
+  model.event.value = null;
+  await model.saveEvent();
+  expect(calls).toContain("/events/revise");
+  expect(calls).not.toContain("/events/publish");
+});
+
+test("a different account seen on refresh clears the previous account's drafts", async () => {
+  const { model, switchAccount } = await harness("#event/event", true);
+  model.replyText.value = "half-written"; model.commentText.value = "draft"; model.search.value = "old";
+  switchAccount({ user: "other", username: "Olu" });
+  await model.refresh();
+  expect(String(model.me.value?.user)).toBe("other");
+  expect(model.replyText.value).toBe("");
+  expect(model.commentText.value).toBe("");
+  expect(model.search.value).toBe("");
+  expect(model.notice.value).toContain("Olu");
+  expect(String(model.event.value?.event)).toBe("event");
+});
+
+test("a focus refresh skipped while a dialog is open runs once the dialog closes", async () => {
+  const { model, calls, focusWindow } = await harness("#notifications", true);
+  const inboxReads = () => calls.filter(path => path === "/notifications/list").length;
+  const initial = inboxReads();
+  model.modal.value = "group";
+  focusWindow();
+  await Bun.sleep(5);
+  expect(inboxReads()).toBe(initial);
+  model.closeModal();
+  const deadline = Date.now() + 1000;
+  while (inboxReads() === initial && Date.now() < deadline) await Bun.sleep(1);
+  expect(inboxReads()).toBe(initial + 1);
+  model.closeModal();
+  await Bun.sleep(5);
+  expect(inboxReads()).toBe(initial + 1);
+});
 
 for (const mode of ["login", "register"] as const) {
   test(`${mode} replaces a stale route with Explore and clears route-specific state`, async () => {

@@ -50,6 +50,8 @@ a set of Events with
   a previousEnd DateTime
 
 Rule: Every event's start is before its end.
+Rule: Trimming removes leading and trailing whitespace and line terminators (as JavaScript String.prototype.trim). Title, description, and location supplied to publish or revise are trimmed and must be within limits: trimmed title 1 to 160 characters, trimmed location 1 to 250, trimmed description at most 5000 (UTF-16 code units). Accepted values are stored trimmed.
+Rule: Events stored before these limits are neither normalized nor rechecked; they read back unchanged. Because revise replaces all text fields, such an event can be revised whenever the supplied values are within limits, and supplied out-of-limit values refuse.
 Rule: Every event is associated with exactly one group.
 Rule: Removal marks an event canceled and retains its identity and details permanently.
 Rule: Only the organizer may revise or remove an event. Canceled events cannot be revised or restored.
@@ -62,14 +64,17 @@ Rule: Picture is initially empty. Empty means no cover; otherwise it is a JPEG d
 
 ```actions
 publish(organizer: User, group: Group, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns (event: Event)
-  where start is before end
+  where start is before end and the trimmed details are within limits
   then
-    add a new event with organizer, group, title, description, start, end, location, and canceled false
+    add a new event with organizer, group, trimmed title, trimmed description, start, end, trimmed location, and canceled false
     set timeChanged false and previousStart/previousEnd to start/end
     returns event
   where start is not before end
   then
     refuses INVALID_PUBLICATION_TIME "The event must start before it ends."
+  where start is before end and the trimmed details are not within limits
+  then
+    refuses INVALID_EVENT_DETAILS "An event needs a title of up to 160 characters and a location of up to 250, with a description of at most 5000."
 
 revise(user: User, event: Event, title: String, description: String, start: DateTime, end: DateTime, location: String) : returns (timeOrLocationChanged: Flag)
   where event is not in Events
@@ -85,12 +90,15 @@ revise(user: User, event: Event, title: String, description: String, start: Date
   where event is in Events and user is its organizer and its canceled is false and start is not before end
   then
     refuses INVALID_REVISION_TIME "The event must start before it ends."
-  where event is in Events and user is its organizer and its canceled is false and start is before end
+  where event is in Events and user is its organizer and its canceled is false and start is before end and the trimmed details are not within limits
   then
-    set timeOrLocationChanged to whether start, end, or location differs from its current value before revision
+    refuses INVALID_EVENT_DETAILS "An event needs a title of up to 160 characters and a location of up to 250, with a description of at most 5000."
+  where event is in Events and user is its organizer and its canceled is false and start is before end and the trimmed details are within limits
+  then
+    set timeOrLocationChanged to whether start or end differs from its current value, or the trimmed supplied location differs from the trimmed current location, before revision
     if either supplied time differs from its current value, first copy the current start/end into previousStart/previousEnd and set timeChanged true
     otherwise preserve timeChanged and both previous times
-    set the event's title, description, start, end, and location to the supplied values
+    set the event's title, description, and location to the trimmed supplied values and its start and end to the supplied values
     leave the event's identity, organizer, and group unchanged
     returns timeOrLocationChanged
 

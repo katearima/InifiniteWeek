@@ -72,3 +72,10 @@ test("event covers preserve metadata and history, serialize owner transitions an
   await expect(events.setPicture({ user: "owner", event, picture: "" })).rejects.toThrow(EventCanceledForRevision);
   expect(await events._getPicture({ event })).toEqual([{ picture: samplePicture }]);
 });
+test("parameterless JPEG markers before start-of-scan are accepted", () => {
+  const bytes = Buffer.from(samplePicture.split(",")[1]!, "base64");
+  const withMarkers = Buffer.concat([bytes.subarray(0, 2), Buffer.from([0xff, 0x01, 0xff, 0xd0]), bytes.subarray(2)]);
+  expect(() => validatePicture(`data:image/jpeg;base64,${withMarkers.toString("base64")}`)).not.toThrow();
+  const truncated = Buffer.concat([bytes.subarray(0, 2), Buffer.from([0xff, 0xd3, 0xff, 0xd9])]);
+  expect(() => validatePicture(`data:image/jpeg;base64,${truncated.toString("base64")}`)).toThrow(InvalidPicture);
+});

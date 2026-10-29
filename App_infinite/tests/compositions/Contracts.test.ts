@@ -44,6 +44,7 @@ test("generated read-back contains the selected flat views and formers", async (
   expect(paths(readback.split("## Views\n")[1]!.split("## Formers\n")[0]!)).toEqual([
     "access.canManageEvent", "access.canMarkEvent", "access.canReadEvent", "access.isMember", "access.organizesActiveEvent",
     "comments.canRead", "comments.canEdit", "comments.canRemove", "notifications.recipients", "notifications.commentRecipients",
+    "notifications.replyRecipient",
   ].sort());
   expect(paths(readback.split("## Formers\n")[1]!.split("## Reactions\n")[0]!)).toEqual([
     "groups.summaries", "groups.summary", "groups.members", "groups.requests", "groups.eventRows",
