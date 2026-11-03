@@ -28,6 +28,9 @@ a calendar. It was built for MIT 6.1040 (Software Design, Fall 2026).
 The [user journey](user_jouerney.md) walks through these features step by step with two
 users, Keti and Tako, whose accounts, groups, and events already exist.
 
+The [user testing report](user-study.md) has the study's task list, two participant
+sessions, and the flaws and improvements they revealed.
+
 ## Quick start
 
 You need [Bun](https://bun.sh) 1.4.2, [Podman](https://podman.io) with Podman Compose
@@ -60,6 +63,7 @@ tests, and deployment.
 | [`design.md`](design.md) | P1 design document: problem framing, pitch, concepts, and reactions |
 | [`sketches/`](sketches/) | P1 hand-drawn UI sketches |
 | [`user_jouerney.md`](user_jouerney.md) | Core user journey for the demo |
+| [`user-study.md`](user-study.md) | User testing: task list, participant sessions, and flaws and improvements |
 | [`Design Study Slides/`](Design%20Study%20Slides/) | Visual design study: slides, notes, and video link |
 | [`package.json`](package.json) | Root scripts that forward `build`, `start`, and `preview` to `App_infinite/` for deployment |
 
@@ -143,10 +147,3 @@ Visual references (typography, color palettes, and textures) explored for the ap
 - [Design study slides and notes](Design%20Study%20Slides/README.md) ([PDF](Design%20Study%20Slides/Presentation1.pdf), [PowerPoint](Design%20Study%20Slides/Presentation1.pptx))
 - [Design study video](https://mitprod-my.sharepoint.com/:v:/g/personal/ketip_mit_edu/IQB_o_IGwFvDSbwRYq5E_T9yAY6a5gXM5UjzVJ2nRmyBp08?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=6rtNmW) (MIT OneDrive/SharePoint)
 
-## Credits
-
-The account concepts and compositions, HTTP cookie and error handling, account tests,
-and parts of the frontend's colors and layout are adapted from
-[ConceptBox](https://github.com/mit-sdg/conceptbox) (MIT License; see [`App_infinite/LICENSES/ConceptBox.txt`](App_infinite/LICENSES/ConceptBox.txt)).
-Bundled fonts are under the SIL Open Font License; their licenses are in
-[`App_infinite/LICENSES/`](App_infinite/LICENSES/).
